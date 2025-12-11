@@ -3,7 +3,7 @@ package devtui
 import (
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"

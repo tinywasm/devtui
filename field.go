@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 // Internal async state management (not exported)

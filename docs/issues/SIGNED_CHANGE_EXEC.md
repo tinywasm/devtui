@@ -49,7 +49,7 @@ This document outlines the planned changes to refactor the `HandlerEdit` and `Ha
 - For all progress callbacks (e.g., in `field.go`), always join and translate all variadic arguments into a single string using the `Translate` function from the `tinystring` package before sending or displaying the message.
 - Example usage:
   ```go
-  import "github.com/cdvelop/tinystring"
+  import "github.com/tinywasm/fmt"
   msg := tinystring.Translate(msgs...)
   ```
 - This ensures that all progress messages are properly composed, translated, and displayed as a single string, as described in the `TRANSLATE.md` documentation.

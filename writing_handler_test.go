@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 // TestWriterHandlerRegistration tests the registration of writing handlers

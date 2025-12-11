@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 type testTracker struct {

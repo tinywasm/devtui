@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cdvelop/devtui"
+	"github.com/tinywasm/devtui"
 
-	example "github.com/cdvelop/devtui/example"
+	example "github.com/tinywasm/devtui/example"
 )
 
 func main() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cdvelop/tinystring"
+	"github.com/tinywasm/fmt"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -111,7 +111,7 @@ func (h *DevTUI) renderFooterInput() string {
 		fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 		remainingWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2
-		labelText := tinystring.Convert(field.getExpandedFooterLabel()).Truncate(remainingWidth-1, 0).String()
+		labelText := fmt.Convert(field.getExpandedFooterLabel()).Truncate(remainingWidth-1, 0).String()
 		displayStyle := lipgloss.NewStyle().
 			Width(remainingWidth).
 			Padding(0, horizontalPadding).
@@ -155,7 +155,7 @@ func (h *DevTUI) renderFooterInput() string {
 		if textWidth < 1 {
 			textWidth = 1
 		}
-		valueText = tinystring.Convert(valueText).Truncate(textWidth, 0).String()
+		valueText = fmt.Convert(valueText).Truncate(textWidth, 0).String()
 
 		// Definir el estilo para el valor del campo (Execution: Fondo blanco con letras oscuras)
 		inputValueStyle := lipgloss.NewStyle().
@@ -185,7 +185,7 @@ func (h *DevTUI) renderFooterInput() string {
 	labelWidth := h.labelWidth
 
 	// Truncar la etiqueta si es necesario
-	labelText := tinystring.Convert(field.handler.Label()).Truncate(labelWidth-1, 0).String()
+	labelText := fmt.Convert(field.handler.Label()).Truncate(labelWidth-1, 0).String()
 
 	// Aplicar el estilo base para garantizar un ancho fijo
 	fixedWidthLabel := h.labelStyle.Render(labelText)
@@ -226,7 +226,7 @@ func (h *DevTUI) renderFooterInput() string {
 	if textWidth < 1 {
 		textWidth = 1
 	}
-	valueText = tinystring.Convert(valueText).Truncate(textWidth, 0).String()
+	valueText = fmt.Convert(valueText).Truncate(textWidth, 0).String()
 
 	// Mostrar cursor solo si estamos en modo edición y el campo es editable
 	if h.editModeActivated && field.editable() {

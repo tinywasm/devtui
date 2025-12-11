@@ -1,7 +1,7 @@
 package example
 
 import (
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 type StatusHandler struct{}

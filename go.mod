@@ -1,11 +1,11 @@
-module github.com/cdvelop/devtui
+module github.com/tinywasm/devtui
 
 go 1.25.2
 
 require (
-	github.com/cdvelop/tinystring v0.11.0
-	github.com/cdvelop/tinytime v0.2.6
 	github.com/charmbracelet/lipgloss v1.1.0
+	github.com/tinywasm/fmt v0.12.2
+	github.com/tinywasm/time v0.2.8
 )
 
 require (
@@ -22,7 +22,6 @@ require (
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/cdvelop/unixid v0.2.9
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.7
 	github.com/charmbracelet/x/ansi v0.10.1 // indirect
@@ -31,5 +30,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/tinywasm/unixid v0.2.13
 	golang.org/x/sys v0.35.0 // indirect
 )

@@ -3,7 +3,7 @@ package devtui
 import (
 	"testing"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 func TestCapitalizeWithMultilineTranslation(t *testing.T) {

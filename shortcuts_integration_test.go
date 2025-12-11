@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cdvelop/devtui/example"
+	"github.com/tinywasm/devtui/example"
 )
 
 func TestShortcutIntegration_DatabaseHandler(t *testing.T) {

@@ -387,8 +387,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/cdvelop/godev"
-	"github.com/cdvelop/devtui" // ONLY import DevTUI in main.go
+	"github.com/tinywasm/godev"
+	"github.com/tinywasm/devtui" // ONLY import DevTUI in main.go
 )
 
 func main() {
@@ -427,7 +427,7 @@ package godev
 
 import (
 	// ... other imports
-	"github.com/cdvelop/devtui" // ❌ BAD: Direct DevTUI import
+	"github.com/tinywasm/devtui" // ❌ BAD: Direct DevTUI import
 )
 
 func (h *handler) AddSectionBUILD() {
@@ -735,7 +735,7 @@ func NewMockTUI() TuiInterface {
 ```go
 // start.go
 package godev
-import "github.com/cdvelop/devtui" // ❌ BAD
+import "github.com/tinywasm/devtui" // ❌ BAD
 
 func Start(rootDir string, logger func(messages ...any), exitChan chan bool) {
 	// Creates DevTUI internally
@@ -772,7 +772,7 @@ func Start(rootDir string, logger func(messages ...any), ui TuiInterface, exitCh
 
 // main.go (cmd/godev/main.go)
 package main
-import "github.com/cdvelop/devtui" // ✅ ONLY import here
+import "github.com/tinywasm/devtui" // ✅ ONLY import here
 ui := devtui.NewTUI(...)
 godev.Start(rootDir, logger.Logger, ui, exitChan) // Pass UI
 
@@ -797,7 +797,7 @@ log("Building project...") // ✅ Simple function call, no .Log()
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ GODEV Package (github.com/cdvelop/godev)                    │
+│ GODEV Package (github.com/tinywasm/godev)                    │
 │ - NO DevTUI import!                                         │
 │ - Defines own interfaces (ui_interface.go):                 │
 │   • TuiInterface                                            │
@@ -809,7 +809,7 @@ log("Building project...") // ✅ Simple function call, no .Log()
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ DevTUI Package (github.com/cdvelop/devtui)                  │
+│ DevTUI Package (github.com/tinywasm/devtui)                  │
 │ - Implements methods that match consumer interfaces         │
 │ - Does NOT define consumer interfaces                       │
 │ - Single AddHandler() method for all types                  │

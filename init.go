@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cdvelop/tinytime"
-	"github.com/cdvelop/unixid"
+	"github.com/tinywasm/time"
+	"github.com/tinywasm/unixid"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -23,7 +23,7 @@ type DevTUI struct {
 	*tuiStyle
 
 	id           *unixid.UnixID
-	timeProvider tinytime.TimeProvider
+	timeProvider time.TimeProvider
 
 	ready    bool
 	viewport viewport.Model
@@ -84,7 +84,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 	}
 
 	// Initialize time provider for timestamp formatting
-	timeProvider := tinytime.NewTimeProvider()
+	timeProvider := time.NewTimeProvider()
 
 	tui := &DevTUI{
 		TuiConfig:        c,

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 // TestRefreshCurrentTab verifica que el método público RefreshUI

@@ -103,7 +103,7 @@ The method is thread-safe because:
 package main
 
 import (
-    "github.com/cdvelop/devtui"
+    "github.com/tinywasm/devtui"
     "time"
 )
 

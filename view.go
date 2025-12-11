@@ -1,7 +1,7 @@
 package devtui
 
 import (
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 	"github.com/charmbracelet/lipgloss"
 )
 

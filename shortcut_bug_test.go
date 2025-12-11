@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	example "github.com/cdvelop/devtui/example"
+	example "github.com/tinywasm/devtui/example"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

@@ -268,7 +268,7 @@ func (ts *tabSection) addLogger(name string, enableTracking bool, color string) 
 ```go
 package godev
 
-import "github.com/cdvelop/devtui" // ❌ Direct import
+import "github.com/tinywasm/devtui" // ❌ Direct import
 
 func New(rootDir string) {
     tui := devtui.NewTUI(&devtui.TuiConfig{
@@ -319,8 +319,8 @@ package main
 
 import (
     "sync"
-    "github.com/cdvelop/devtui"  // ✅ Only imported in main
-    "github.com/cdvelop/godev"    // Consumer package
+    "github.com/tinywasm/devtui"  // ✅ Only imported in main
+    "github.com/tinywasm/godev"    // Consumer package
 )
 
 func main() {
@@ -648,8 +648,8 @@ import (
     "sync"
     "time"
     
-    "github.com/cdvelop/devtui"
-    "github.com/cdvelop/godev"
+    "github.com/tinywasm/devtui"
+    "github.com/tinywasm/godev"
 )
 
 func main() {

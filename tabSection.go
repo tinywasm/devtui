@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 // Interface for handling tab field sectionFields

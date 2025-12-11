@@ -2,7 +2,7 @@ package devtui
 
 // createShortcutsTab creates and registers the shortcuts tab with its handler
 import (
-	. "github.com/cdvelop/tinystring"
+	. "github.com/tinywasm/fmt"
 )
 
 func createShortcutsTab(tui *DevTUI) {
