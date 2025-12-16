@@ -1,14 +1,17 @@
 package devtui
 
 import (
-	"fmt"
+	"bufio"
+	"os"
 	"sync"
 	"time"
 
-	"github.com/tinywasm/time"
-	"github.com/tinywasm/unixid"
+	"github.com/tinywasm/fmt"
+	tinytime "github.com/tinywasm/time"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/tinywasm/unixid"
 )
 
 // channelMsg es un tipo especial para mensajes del canal
@@ -23,7 +26,7 @@ type DevTUI struct {
 	*tuiStyle
 
 	id           *unixid.UnixID
-	timeProvider time.TimeProvider
+	timeProvider tinytime.TimeProvider
 
 	ready    bool
 	viewport viewport.Model
@@ -66,7 +69,7 @@ type TuiConfig struct {
 //	    AppName: "MyApp",
 //	    ExitChan: make(chan bool),
 //	    Color: nil, // or your *ColorPalette
-//	    Logger: func(err any) { fmt.Println(err) },
+//	    Logger: func(err any) { os.Stdout.WriteString(fmt.Fmt("%v\n", err)) },
 //	}
 //	tui := NewTUI(config)
 func NewTUI(c *TuiConfig) *DevTUI {
@@ -84,7 +87,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 	}
 
 	// Initialize time provider for timestamp formatting
-	timeProvider := time.NewTimeProvider()
+	timeProvider := tinytime.NewTimeProvider()
 
 	tui := &DevTUI{
 		TuiConfig:        c,
@@ -154,10 +157,9 @@ func (h *DevTUI) Start(args ...any) {
 	h.checkAndTriggerInteractiveContent()
 
 	if _, err := h.tea.Run(); err != nil {
-		fmt.Println("Error running DevTUI:", err)
-		fmt.Println("\nPress any key to exit...")
-		var input string
-		fmt.Scanln(&input)
+		os.Stdout.WriteString(fmt.Fmt("Error running DevTUI: %v\n", err))
+		os.Stdout.WriteString("\nPress any key to exit...\n")
+		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}
 }
 

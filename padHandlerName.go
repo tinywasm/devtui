@@ -1,6 +1,6 @@
 package devtui
 
-import "strings"
+import "github.com/tinywasm/fmt"
 
 const HandlerNameWidth = 8
 
@@ -13,5 +13,5 @@ func padHandlerName(name string, width int) string {
 	padding := width - len(name)
 	leftPad := padding / 2
 	rightPad := padding - leftPad
-	return strings.Repeat(" ", leftPad) + name + strings.Repeat(" ", rightPad)
+	return fmt.Convert(" ").Repeat(leftPad).String() + name + fmt.Convert(" ").Repeat(rightPad).String()
 }

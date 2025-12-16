@@ -1,12 +1,12 @@
 package devtui
 
 import (
-	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
 	"time"
+
+	"github.com/tinywasm/fmt"
 )
 
 func (t *DevTUI) ReturnFocus() error {
@@ -17,11 +17,11 @@ func (t *DevTUI) ReturnFocus() error {
 
 	switch runtime.GOOS {
 	case "linux":
-		cmd := exec.Command("xdotool", "search", "--pid", fmt.Sprint(pid), "windowactivate")
+		cmd := exec.Command("xdotool", "search", "--pid", fmt.Convert(pid).String(), "windowactivate")
 		return cmd.Run()
 
 	case "darwin":
-		cmd := exec.Command("osascript", "-e", fmt.Sprintf(`
+		cmd := exec.Command("osascript", "-e", fmt.Fmt(`
             tell application "System Events"
                 set frontmost of the first process whose unix id is %d to true
             end tell
@@ -30,11 +30,11 @@ func (t *DevTUI) ReturnFocus() error {
 
 	case "windows":
 		// Usando taskkill para verificar si el proceso existe y obtener su ventana
-		cmd := exec.Command("cmd", "/C", fmt.Sprintf("tasklist /FI \"PID eq %d\" /FO CSV /NH", pid))
+		cmd := exec.Command("cmd", "/C", fmt.Fmt("tasklist /FI \"PID eq %d\" /FO CSV /NH", pid))
 		return cmd.Run()
 
 	default:
-		return errors.New("focus unsupported platform")
+		return fmt.Err("focus unsupported platform")
 	}
 
 }

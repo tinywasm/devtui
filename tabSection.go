@@ -1,8 +1,6 @@
 package devtui
 
 import (
-	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -60,7 +58,7 @@ func (ts *tabSection) getWritingHandler(name string) *anyHandler {
 }
 
 func (hw *handlerWriter) Write(p []byte) (n int, err error) {
-	msg := strings.TrimSpace(string(p))
+	msg := Convert(string(p)).TrimSpace().String()
 	if msg != "" {
 		message, msgType := Translate(msg).StringType()
 
@@ -109,12 +107,12 @@ func (ts *tabSection) registerLoggerFunc(handler HandlerLogger, color string) fu
 			if str, ok := message[0].(string); ok {
 				msg = str
 			} else {
-				msg = fmt.Sprintf("%v", message[0])
+				msg = Fmt("%v", message[0])
 			}
 		} else {
-			msg = fmt.Sprintf("%v", message[0])
+			msg = Fmt("%v", message[0])
 			for _, m := range message[1:] {
-				msg += " " + fmt.Sprintf("%v", m)
+				msg += " " + Fmt("%v", m)
 			}
 		}
 
@@ -192,8 +190,9 @@ func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content 
 // The returned value must be passed to AddHandler/AddLogger methods.
 //
 // Example:
-//   tab := tui.NewTabSection("BUILD", "Compiler Section")
-//   tui.AddHandler(myHandler, 2*time.Second, "#3b82f6", tab)
+//
+//	tab := tui.NewTabSection("BUILD", "Compiler Section")
+//	tui.AddHandler(myHandler, 2*time.Second, "#3b82f6", tab)
 func (t *DevTUI) NewTabSection(title, description string) any {
 	tab := &tabSection{
 		title:              title,

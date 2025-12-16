@@ -1,11 +1,8 @@
 package devtui
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/tinywasm/fmt"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/tinywasm/fmt"
 )
 
 // footerView renderiza la vista del footer
@@ -45,7 +42,7 @@ func (h *DevTUI) footerView() string {
 		displayCurrent = min(currentField, 99) + 1 // 1-based for display
 		displayTotal = min(totalFields, 99)
 	}
-	fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
+	fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
 	paginationStyled := h.paginationStyle.Render(fieldPagination)
 	info := h.renderScrollInfo()
 	horizontalPadding := 1
@@ -54,7 +51,7 @@ func (h *DevTUI) footerView() string {
 	if lineWidth < 0 {
 		lineWidth = 0
 	}
-	line := h.lineHeadFootStyle.Render(strings.Repeat("─", lineWidth))
+	line := h.lineHeadFootStyle.Render(fmt.Convert("─").Repeat(lineWidth).String())
 	// Layout: [Pagination] [Line] [Scroll%]
 	return lipgloss.JoinHorizontal(lipgloss.Left, paginationStyled, spacerStyle, line, spacerStyle, info)
 }
@@ -108,7 +105,7 @@ func (h *DevTUI) renderFooterInput() string {
 		}
 		displayCurrent := min(currentField, 99) + 1 // 1-based for display
 		displayTotal := min(totalFields, 99)
-		fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
+		fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 		remainingWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2
 		labelText := fmt.Convert(field.getExpandedFooterLabel()).Truncate(remainingWidth-1, 0).String()
@@ -137,7 +134,7 @@ func (h *DevTUI) renderFooterInput() string {
 		}
 		displayCurrent := min(currentField, 99) + 1 // 1-based for display
 		displayTotal := min(totalFields, 99)
-		fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
+		fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 
 		// Para execution: el valor usa todo el espacio disponible (sin label separado)
@@ -201,7 +198,7 @@ func (h *DevTUI) renderFooterInput() string {
 	}
 	displayCurrent := min(currentField, 99) + 1 // 1-based for display
 	displayTotal := min(totalFields, 99)
-	fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
+	fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
 	paginationStyled := h.paginationStyle.Render(fieldPagination)
 
 	// Calcular ancho para el valor incluyendo TODOS los elementos: [Pagination] [Label] [Value] [Scroll%]

@@ -1,15 +1,16 @@
 package devtui
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/tinywasm/fmt"
 )
 
 // validateTabSection validates that the provided any is a valid *tabSection
 // Returns the typed tabSection or panics with clear error message
 func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 	if tab == nil {
-		panic(fmt.Sprintf(
+		panic(fmt.Fmt(
 			"DevTUI.%s: tabSection parameter is nil\n"+
 				"Usage: tab := tui.NewTabSection(...); tui.%s(..., tab)",
 			methodName, methodName))
@@ -17,7 +18,7 @@ func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 
 	ts, ok := tab.(*tabSection)
 	if !ok {
-		panic(fmt.Sprintf(
+		panic(fmt.Fmt(
 			"DevTUI.%s: invalid tabSection type %T\n"+
 				"Expected: value returned by tui.NewTabSection()\n"+
 				"Got: %T\n"+
@@ -26,7 +27,7 @@ func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 	}
 
 	if ts.tui != t {
-		panic(fmt.Sprintf(
+		panic(fmt.Fmt(
 			"DevTUI.%s: tabSection belongs to different DevTUI instance\n"+
 				"Each tabSection can only be used with the DevTUI instance that created it",
 			methodName))
