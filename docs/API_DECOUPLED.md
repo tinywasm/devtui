@@ -325,7 +325,7 @@ type handler struct {
 	// Build dependencies
 	serverHandler *goserver.ServerHandler
 	assetsHandler *AssetMin
-	wasmHandler   *tinywasm.TinyWasm
+	wasmClient   *tinywasm.TinyWasm
 	watcher       *devwatch.DevWatch
 	browser       *devbrowser.DevBrowser
 	
