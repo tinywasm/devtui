@@ -1,12 +1,12 @@
-# Step 4: Verification and Testing
+# Step 3: Verification and Testing (DevTUI)
 
 ## Objective
 
-Verify that the MCP integration works correctly and all existing tests pass.
+Verify that the MCP implementation in DevTUI works correctly and all existing tests pass.
 
 ## Prerequisites
 
-Complete [Step 3](MCP_STEP3_APP_INTEGRATION.md) first.
+Complete [Step 2](MCP_STEP2_CREATE_MCP_GO.md) first.
 
 ## Verification Steps
 
@@ -18,15 +18,7 @@ cd /home/cesar/Dev/Pkg/tinywasm/devtui && go test ./... -v
 
 Expected: All tests pass
 
-### 2. Run All App Tests  
-
-```bash
-cd /home/cesar/Dev/Pkg/tinywasm/app && go test ./... -v
-```
-
-Expected: All tests pass
-
-### 3. Verify No ANSI Codes in Plain Output
+### 2. Verify No ANSI Codes in Plain Output
 
 Create a simple test in `devtui/mcp_test.go`:
 
@@ -173,7 +165,7 @@ cd /home/cesar/Dev/Pkg/tinywasm/devtui && go test -v -run TestGetMCPToolsMetadat
 cd /home/cesar/Dev/Pkg/tinywasm/devtui && go test -v -run TestMCPGetSectionLogsListsSections
 ```
 
-### 4. Manual Verification (Optional)
+### 3. Manual Verification (Optional)
 
 If you want to manually test the MCP integration:
 
@@ -201,19 +193,18 @@ If you want to manually test the MCP integration:
 ## Completion Checklist
 
 - [ ] All devtui tests pass
-- [ ] All app tests pass
 - [ ] New MCP tests pass (TestGetSectionLogsPlainNoANSI, TestGetMCPToolsMetadata, TestMCPGetSectionLogsListsSections)
 - [ ] No ANSI escape codes in plain output
-- [ ] Tool appears in MCP tools list (optional manual verification)
 
 ## Final Implementation Summary
 
-After completing all steps:
+After completing all DevTUI steps:
 
 1. **devtui/print.go**: `formatMessage(msg, styled bool)` supports styled/unstyled output
 2. **devtui/view.go**: `ContentViewPlain()` for plain text output
 3. **devtui/mcp.go**: MCP tool metadata and implementation
 4. **devtui/mcp_test.go**: Tests for MCP functionality
-5. **app/start.go**: DevTUI passed as tool handler to mcpserve
 
-The `devtui_get_section_logs` tool is now available to LLMs via MCP!
+After completing app integration (see `tinywasm/app/docs/issues/MCP_DEVTUI_INTEGRATION.md`):
+- The `devtui_get_section_logs` tool will be available to LLMs via MCP
+

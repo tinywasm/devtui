@@ -19,14 +19,41 @@ Create a single MCP tool `devtui_get_section_logs` that:
 | **Log Limit** | No limit | Handlers use `MessageTracker` to avoid log growth |
 | **Output Format** | Plain text | Same as `ContentView()` but without ANSI escape codes |
 
+## Critical: Message Storage and Rendering
+
+> **IMPORTANT**: Messages are stored ONCE without ANSI styles. Styles are applied ON-DEMAND at render time.
+
+```
+┌─────────────────────────────────────────────────┐
+│  tabContent.Content = "Compiling main.go..."    │  ← Stored ONCE (no ANSI)
+│  tabContent.Type = Msg.Success                  │  ← Message type for styling
+└──────────────────────┬──────────────────────────┘
+                       │
+           ┌───────────┴───────────┐
+           ↓                       ↓
+ formatMessage(styled=true)    formatMessage(styled=false)
+           ↓                       ↓
+   "\x1b[32m..."                "12:30:45 [WASM] Compiling..."
+   (terminal display)           (MCP/LLM output)
+```
+
+**Key points:**
+- **NO memory duplication** - message stored once without styles
+- **NO code duplication** - single `formatMessage()` function with `styled` parameter
+- `styled=true` → applies ANSI colors via `applyMessageTypeStyle()` (for terminal)
+- `styled=false` → returns plain text (for MCP tool output)
+
 ## Implementation Steps
 
 Complete each step in order. Mark `[x]` when done.
 
+### DevTUI Changes (this package)
 - [ ] **Step 1**: [Refactor formatMessage for styled/unstyled output](MCP_STEP1_REFACTOR_FORMAT.md)
 - [ ] **Step 2**: [Create mcp.go with tool metadata and implementation](MCP_STEP2_CREATE_MCP_GO.md)  
-- [ ] **Step 3**: [Integrate devtui MCP tools in tinywasm/app](MCP_STEP3_APP_INTEGRATION.md)
-- [ ] **Step 4**: [Verification and testing](MCP_STEP4_VERIFICATION.md)
+- [ ] **Step 3**: [Verification and testing](MCP_STEP3_VERIFICATION.md)
+
+### App Integration (tinywasm/app)
+- [ ] **Step 4**: See `tinywasm/app/docs/issues/MCP_DEVTUI_INTEGRATION.md`
 
 ## Files to Modify/Create
 
@@ -38,23 +65,27 @@ Complete each step in order. Mark `[x]` when done.
 | `view.go` | MODIFY | Add `ContentViewPlain()` method for unstyled output |
 | `mcp.go` | CREATE | MCP tool metadata and implementation |
 
-### App Package (`tinywasm/app`)
+### App Package (`tinywasm/app`) - See separate issue
 
 | File | Action | Description |
 |------|--------|-------------|
 | `start.go` | MODIFY | Pass DevTUI as tool handler to mcpserve |
-| `interface.go` | MODIFY | Extend `TuiInterface` if needed |
 
 ## Expected Tool Behavior
 
 ### Tool: `devtui_get_section_logs`
 
-**Description**: Get logs from a specific DevTUI section (tab). Lists available sections when called without parameters.
+**Description** (dynamically generated): 
+```
+Get logs from a specific DevTUI terminal section (tab). Available sections: 'SHORTCUTS', 'BUILD', 'DEPLOY'. Pass empty section parameter to list sections with descriptions.
+```
+
+> **Note**: The description is generated dynamically at runtime to include all registered sections. This allows LLMs to know valid section names directly from the tool listing.
 
 **Parameters**:
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `section` | string | No | Section title (e.g., "BUILD", "DEPLOY"). If empty, lists available sections |
+| `section` | string | No | Section title to get logs from. Leave empty to list sections. EnumValues = section titles |
 
 **Example Responses**:
 

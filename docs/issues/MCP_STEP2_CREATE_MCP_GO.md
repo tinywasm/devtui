@@ -49,17 +49,27 @@ type MCPParameterMetadata struct {
 // GetMCPToolsMetadata returns MCP tools provided by DevTUI.
 // This method is called via reflection by mcpserve to discover tools.
 func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
-	// Get available section titles for enum
+	// Get available section titles for enum and description
 	sectionTitles := d.getSectionTitles()
+	
+	// Build dynamic description with available sections
+	description := "Get logs from a specific DevTUI terminal section (tab). Available sections: "
+	for i, title := range sectionTitles {
+		if i > 0 {
+			description += ", "
+		}
+		description += "'" + title + "'"
+	}
+	description += ". Pass empty section parameter to list sections with descriptions."
 
 	return []MCPToolMetadata{
 		{
 			Name:        "devtui_get_section_logs",
-			Description: "Get logs from a specific DevTUI terminal section (tab). Lists available sections when called without parameters or with empty section name.",
+			Description: description,
 			Parameters: []MCPParameterMetadata{
 				{
 					Name:        "section",
-					Description: "Section title to get logs from (e.g., 'BUILD', 'DEPLOY'). Leave empty to list available sections.",
+					Description: "Section title to get logs from. Leave empty to list available sections.",
 					Required:    false,
 					Type:        "string",
 					EnumValues:  sectionTitles,
