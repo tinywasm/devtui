@@ -35,7 +35,7 @@ func TestOpcionA_RequirementsValidation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%s_%s", tc.handler, tc.msgType.String()), func(t *testing.T) {
 			tabContent := tui.createTabContent(tc.content, tc.msgType, tab.(*tabSection), tc.handler, "", "")
-			formattedMessage := tui.formatMessage(tabContent)
+			formattedMessage := tui.formatMessage(tabContent, true)
 
 			t.Logf("Message: %s", formattedMessage)
 
@@ -140,7 +140,7 @@ func TestLastMessageColorFixed(t *testing.T) {
 		t.Run(tc.content, func(t *testing.T) {
 			// Simular el mensaje final de una operación
 			tabContent := tui.createTabContent(tc.content, tc.expectedType, tab.(*tabSection), "TestHandler", "final-op-123", "")
-			formattedMessage := tui.formatMessage(tabContent)
+			formattedMessage := tui.formatMessage(tabContent, true)
 
 			t.Logf("Context: %s", tc.context)
 			t.Logf("Content: %s", tc.content)

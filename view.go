@@ -51,8 +51,50 @@ func (h *DevTUI) ContentView() string {
 
 	// Add regular tab content messages
 	for _, content := range tabContent {
-		formattedMsg := h.formatMessage(content)
+		formattedMsg := h.formatMessage(content, true)
 		contentLines = append(contentLines, h.textContentStyle.Render(formattedMsg))
+	}
+	return Convert(contentLines).Join("\n").String()
+}
+
+// ContentViewPlain renders messages for a content section without ANSI codes (for MCP)
+func (h *DevTUI) ContentViewPlain(tabIndex int) string {
+	if len(h.TabSections) == 0 {
+		return "No tabs created yet"
+	}
+	// Use provided index or default to active tab if out of bounds (though usually caller provides valid index)
+	idx := tabIndex
+	if idx < 0 || idx >= len(h.TabSections) {
+		return "Invalid tab index"
+	}
+
+	section := h.TabSections[idx]
+	section.mu.RLock()
+	tabContent := make([]tabContent, len(section.tabContents))
+	copy(tabContent, section.tabContents)
+	section.mu.RUnlock()
+
+	var contentLines []string
+
+	// NEW: Add display handler content if active field is a Display handler
+	fieldHandlers := section.fieldHandlers
+	if len(fieldHandlers) > 0 && section.indexActiveEditField < len(fieldHandlers) {
+		activeField := fieldHandlers[section.indexActiveEditField]
+		if activeField.hasContentMethod() {
+			displayContent := activeField.getDisplayContent()
+			if displayContent != "" {
+				contentLines = append(contentLines, displayContent)
+				if len(tabContent) > 0 {
+					contentLines = append(contentLines, "")
+				}
+			}
+		}
+	}
+
+	for _, content := range tabContent {
+		// styled=false for plain text
+		formattedMsg := h.formatMessage(content, false)
+		contentLines = append(contentLines, formattedMsg)
 	}
 	return Convert(contentLines).Join("\n").String()
 }

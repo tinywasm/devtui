@@ -44,32 +44,57 @@ func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSecti
 }
 
 // formatMessage formatea un mensaje según su tipo
-func (t *DevTUI) formatMessage(msg tabContent) string {
+// When styled is false, no ANSI escape codes are added (for MCP/LLM output).
+func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 	// Check if message comes from a readonly field handler (HandlerDisplay)
 	if msg.handlerName != "" && t.isReadOnlyHandler(msg.handlerName) {
 		// For readonly fields: no timestamp, cleaner visual content, no special coloring
 		return msg.Content
 	}
 
-	// Apply message type styling to content (unified for all handler types)
-	styledContent := t.applyMessageTypeStyle(msg.Content, msg.Type)
+	var content string
+	var timeStr string
+	var handlerName string
 
-	// Generate timestamp (unified for all handler types that need it)
-	timeStr := t.generateTimestamp(msg.Timestamp)
+	if styled {
+		content = t.applyMessageTypeStyle(msg.Content, msg.Type)
+		timeStr = t.generateTimestamp(msg.Timestamp)
+		handlerName = t.formatHandlerName(msg.handlerName, msg.handlerColor)
+	} else {
+		content = msg.Content
+		timeStr = t.generateTimestampPlain(msg.Timestamp)
+		handlerName = t.formatHandlerNamePlain(msg.handlerName)
+	}
 
 	// Check if message comes from interactive handler - clean format with timestamp only
 	if msg.handlerName != "" && t.isInteractiveHandler(msg.handlerName) {
 		// Interactive handlers: timestamp + content (no handler name for cleaner UX)
-		return Fmt("%s %s", timeStr, styledContent)
+		return Fmt("%s %s", timeStr, content)
 	}
 
 	// Default format for other handlers (Edit, Execution, Writers)
 	// Use already padded handlerName for consistent width
-	handlerName := t.formatHandlerName(msg.handlerName, msg.handlerColor)
-	return Fmt("%s %s%s", timeStr, handlerName, styledContent)
+	return Fmt("%s %s%s", timeStr, handlerName, content)
 }
 
 // Helper methods to reduce code duplication
+
+// generateTimestampPlain returns timestamp without styling
+func (t *DevTUI) generateTimestampPlain(timestamp string) string {
+	if t.timeProvider != nil && timestamp != "" {
+		return t.timeProvider.FormatTime(timestamp)
+	}
+	return "--:--:--"
+}
+
+// formatHandlerNamePlain returns handler name without styling (just padded)
+func (t *DevTUI) formatHandlerNamePlain(handlerName string) string {
+	if handlerName == "" {
+		return ""
+	}
+	// handlerName already comes padded from createTabContent
+	return handlerName + " "
+}
 
 func (t *DevTUI) applyMessageTypeStyle(content string, msgType MessageType) string {
 	switch msgType {
