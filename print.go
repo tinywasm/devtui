@@ -1,46 +1,19 @@
 package devtui
 
 import (
+	"time"
+
 	"github.com/charmbracelet/lipgloss"
 	. "github.com/tinywasm/fmt"
 )
 
 // NEW: sendMessageWithHandler sends a message with handler identification
-func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSection *tabSection, handlerName string, operationID string, handlerColor string) {
-	// Use update or add function that handles operationID reuse
-	_, newContent := tabSection.updateOrAddContentWithHandler(mt, content, handlerName, operationID, handlerColor)
+func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string) {
+	// trackingID is now the handlerName for automatic tracking
+	_, newContent := tabSection.updateOrAddContentWithHandler(mt, content, handlerName, trackingID, handlerColor)
 
-	// Always send to channel to trigger UI update, regardless of whether content was updated or added new
+	// Always send to channel to trigger UI update
 	d.tabContentsChan <- newContent
-
-	// Call SetLastOperationID on the handler after processing
-	// First try writing handlers, then field handlers
-	var targetHandler *anyHandler
-	if handler := tabSection.getWritingHandler(handlerName); handler != nil {
-		targetHandler = handler
-	} else {
-		// Search in field handlers
-		for _, field := range tabSection.fieldHandlers {
-			if field.handler != nil && field.handler.Name() == handlerName {
-				targetHandler = field.handler
-				break
-			}
-		}
-	}
-
-	if targetHandler != nil {
-		targetHandler.SetLastOperationID(newContent.Id)
-	} else {
-		// Handler not found; log available handlers for diagnosis
-		if tabSection.tui != nil && tabSection.tui.Logger != nil {
-			tabSection.tui.Logger(Fmt("Handler not found for '%s'. Available field handlers:", handlerName))
-			for i, field := range tabSection.fieldHandlers {
-				if field.handler != nil {
-					tabSection.tui.Logger(Fmt("  [%d] %s", i, field.handler.Name()))
-				}
-			}
-		}
-	}
 }
 
 // formatMessage formatea un mensaje según su tipo
@@ -170,46 +143,32 @@ func (t *DevTUI) isInteractiveHandler(handlerName string) bool {
 	return false
 }
 
-// createTabContent creates tabContent with unified logic (replaces newContent and newContentWithHandler)
-func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *tabSection, handlerName string, operationID string, handlerColor string) tabContent {
+// createTabContent creates tabContent with unified logic
+func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string) tabContent {
 	// Timestamp SIEMPRE nuevo usando GetNewID - Handle gracefully if unixid failed to initialize
 	var timestamp string
 	if h.id != nil {
 		timestamp = h.id.GetNewID()
 	} else {
-		errMsg := "error: unixid not initialized, using fallback timestamp for content: " + content
 		// Log the issue before using fallback
 		if h.Logger != nil {
-			h.Logger(errMsg)
+			h.Logger("Warning: unixid not initialized, using fallback timestamp for content: " + content)
 		}
-		panic(errMsg) // Panic to ensure we catch this critical issue
 		// Graceful fallback when unixid initialization failed
-	}
-
-	var id string
-	var opID *string
-
-	// Lógica unificada para ID
-	if operationID != "" {
-		id = operationID
-		opID = &operationID
-	} else {
-		// Usar el mismo timestamp como ID para operaciones nuevas
-		id = timestamp
-		opID = nil
+		timestamp = h.timeProvider.FormatTime(time.Now().UnixNano())
 	}
 
 	return tabContent{
-		Id:             id,
-		Timestamp:      timestamp, // NUEVO campo
+		Id:             timestamp,
+		Timestamp:      timestamp,
 		Content:        content,
 		Type:           mt,
 		tabSection:     tabSection,
-		operationID:    opID,
+		operationID:    nil,
 		isProgress:     false,
 		isComplete:     false,
 		handlerName:    padHandlerName(handlerName, HandlerNameWidth),
 		RawHandlerName: handlerName,
-		handlerColor:   handlerColor, // NEW: Set the color field
+		handlerColor:   handlerColor,
 	}
 }

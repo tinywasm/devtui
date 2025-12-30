@@ -7,9 +7,9 @@ Reusable **message presentation system** for Go development tools. DevTUI is a p
 
 **Decoupled Design**: DevTUI follows consumer-driven interface design - your application defines UI interfaces, DevTUI implements them. This enables zero coupling, easy testing, and pluggable UI implementations.
 
-**What DevTUI does**: Takes messages from your handlers via a `progress` channel and displays them in a clean, organized terminal interface with tabs, navigation, and automatic formatting.
+**What DevTUI does**: Takes messages from your handlers via a `progress` channel or an internal `log()` function and displays them in a clean, organized terminal interface with tabs, navigation, and automatic formatting.
 
-**What DevTUI doesn't do**: Validate data, handle errors, or manage business logic. Your handlers are responsible for their own state and decisions - DevTUI just shows whatever they tell it to show.
+**Unified Architecture**: DevTUI uses a single entry point (`AddHandler`) for all types of content. Handlers can optionally implement the `Loggable` interface to receive a logger from DevTUI, enabling automatic message tracking and a clean "last log only" display.
 
 ![devtui](tui.jpg)
 
@@ -49,43 +49,34 @@ When the user changes the value, the UI will update the content, but **no new me
 DevTUI uses specialized handler interfaces that require minimal implementation. Here is a complete example using the new **universal registration API**:
 
 ```go
-// HandlerExecution with MessageTracker - Action buttons with progress tracking
+// Loggable Handler - Automatic logging with Name() tracking
 type BackupHandler struct {
-    lastOpID string
+    log func(message ...any)
 }
 
-func (h *BackupHandler) Name() string  { return "SystemBackup" }
-func (h *BackupHandler) Label() string { return "Create System Backup" }
+func (h *BackupHandler) Name() string                     { return "SystemBackup" }
+func (h *BackupHandler) Label() string                    { return "Create System Backup" }
+func (h *BackupHandler) SetLog(f func(message ...any))    { h.log = f }
 func (h *BackupHandler) Execute(progress chan<- string) {
-    progress <- "Preparing backup..."
+    h.log("Preparing backup...")
     time.Sleep(200 * time.Millisecond)
-    progress <- "Backing up database..."
+    h.log("Backing up database...")
     time.Sleep(500 * time.Millisecond)
-    progress <- "Backup completed successfully"
+    h.log("Backup completed successfully")
 }
-
-// MessageTracker implementation for operation tracking
-func (h *BackupHandler) GetLastOperationID() string   { return h.lastOpID }
-func (h *BackupHandler) SetLastOperationID(id string) { h.lastOpID = id }
 
 func main() {
     tui := devtui.NewTUI(&devtui.TuiConfig{
         AppName:  "Demo",
         ExitChan: make(chan bool),
-        Color: &devtui.ColorPalette{
-            Foreground: "#F4F4F4",
-            Background: "#000000",
-            Primary:  "#FF6600",
-            Secondary:   "#666666",
-        },
-        Logger: func(messages ...any) {
-            // Replace with actual logging implementation
-        },
+        // ... colors ...
     })
 
     // Operations tab with universal AddHandler registration
     ops := tui.NewTabSection("Operations", "System Operations")
-    tui.AddHandler(&BackupHandler{}, 5*time.Second, "#10b981", ops) // Universal registration with MessageTracker detection
+    
+    // DevTUI detects BackupHandler implements Loggable and calls SetLog()
+    tui.AddHandler(&BackupHandler{}, 5*time.Second, "#10b981", ops)
 
     var wg sync.WaitGroup
     wg.Add(1)
@@ -174,19 +165,20 @@ type HandlerInteractive interface {
 
 **[→ See complete implementation example](example/HandlerInteractive.go)**
 
-### 5. HandlerLogger - Simple Logging (1 method)
+### 5. Loggable Interface - Automatic Logging (2 methods)
 ```go
-type HandlerLogger interface {
-    Name() string // Writer identifier
+// Loggable handlers receive a logger from DevTUI. All messages sent 
+// to this logger are automatically tracked by Name().
+type Loggable interface {
+    Name() string
+    SetLog(logger func(message ...any))
 }
 ```
-**[→ See complete HandlerLogger implementation example](example/HandlerLogger.go)**
+**Key Advantage**: When a handler uses its internal logger, DevTUI ensures the terminal view remains clean by showing only the **most recent message** for that specific handler (ordered newest first). Full history is preserved internally and remains accessible via MCP tools.
 
-**[→ See complete HandlerLoggerTracker implementation example](example/HandlerLoggerTracker.go)**
+**[→ See complete Loggable implementation example](example/LoggableHandler.go)**
 
 ## Registration Methods
-
-DevTUI uses a **universal registration method** with **automatic type detection** and **MessageTracker detection**. Simply pass any handler and DevTUI automatically detects the interface type and capabilities:
 
 ```go
 // Universal AddHandler method - works with ALL handler types
@@ -198,45 +190,33 @@ tui.AddHandler(handler, timeout, color, tab)
 //   - HandlerEdit: Interactive text input fields
 //   - HandlerExecution: Action buttons
 //   - HandlerInteractive: Combined display + interaction
-//   - HandlerLogger: Basic line-by-line logging (via MessageTracker detection)
+//   - Loggable: Automatic logging with Name() tracking
 //
 // Optional interfaces (detected automatically):
-//   - MessageTracker: Enables message update tracking
 //   - ShortcutProvider: Registers global keyboard shortcuts
 
 // Examples:
-tui.AddHandler(myDisplayHandler, 0, "", tab)                    // Display handler (timeout ignored)
-tui.AddHandler(myEditHandler, 2*time.Second, "#3b82f6", tab)    // Edit handler with timeout
-tui.AddHandler(myExecutionHandler, 5*time.Second, "#10b981", tab) // Execution handler with timeout
-tui.AddHandler(myInteractiveHandler, 3*time.Second, "#f59e0b", tab) // Interactive handler
-
-// Logger creation (returns func(message ...any))
-logger := tui.AddLogger("LogWriter", false, "#6b7280", tab)        // Basic logger (new lines only)
-loggerWithTracker := tui.AddLogger("TrackedWriter", true, "#3b82f6", tab) // Advanced logger (message tracking)
-logger("Log message 1")
-logger("Another log entry")
+tui.AddHandler(myDisplayHandler, 0, "", tab)                    // Display handler
+tui.AddHandler(myEditHandler, 2*time.Second, "#3b82f6", tab)    // Edit handler 
+tui.AddHandler(myLoggableHandler, 0, "#6b7280", tab)            // Loggable handler
 ```
 
-### Optional MessageTracker Implementation
+### Automatic Tracking and Clean View
 
-To enable **operation tracking** (updating existing messages instead of creating new ones), simply implement the `MessageTracker` interface:
+DevTUI implements a **clean terminal policy**. By default:
+1. Every message sent via `SetLog()` is matched to the handler's `Name()`.
+2. The terminal displays only the **last log entry** for each registered handler.
+3. This prevents log saturation and keeps the interface focused on the current state.
+4. MCP tools can still request the `full history` for debugging purposes.
 
-```go
-type MessageTracker interface {
-    GetLastOperationID() string
-    SetLastOperationID(id string)
-}
-```
-
-DevTUI automatically detects when a handler implements `MessageTracker` and enables operation tracking without any additional registration steps.
 
 ## Key Features
 
 - **Minimal Implementation**: 1-5 methods per handler
-- **Universal Registration**: Single `AddHandler()` method for all handler types with automatic type detection
-- **Specialized Interfaces**: Clear separation by purpose (Display, Edit, Execution, Interactive, Logger)
+- **Universal Registration**: Single `AddHandler()` method for all handler types
+- **Loggable Interface**: Automatic logging with `SetLog` and name-based tracking
+- **Clean Terminal Display**: Only the most recent log per handler is shown by default
 - **Progress Callbacks**: Real-time feedback for long-running operations
-- **Automatic MessageTracker Detection**: Optionally implement `MessageTracker` interface for operation tracking
 - **Decoupled Architecture**: Consumers define their own interfaces - DevTUI implements them
 - **Thread-Safe**: Concurrent handler registration and execution
 
@@ -254,8 +234,7 @@ status messages. A small contract to keep in mind:
 - To avoid deadlocks, avoid blocking sends on the channel. If a send may
     block (for example when the channel is unbuffered and the UI may be busy),
     send from a goroutine or use a non-blocking select with a default case.
-- MessageTracker implementations can be used alongside progress messages to
-    enable updating existing messages instead of appending new ones.
+- MessageTracker functionality is now built-in for all `Loggable` handlers.
 
 ## Decoupled Architecture
 
@@ -272,7 +251,6 @@ DevTUI follows a **consumer-driven interface design** where consuming applicatio
 type TuiInterface interface {
     NewTabSection(title, description string) any
     AddHandler(handler any, timeout time.Duration, color string, tabSection any)
-    AddLogger(name string, enableTracking bool, color string, tabSection any) func(message ...any)
     Start(wg *sync.WaitGroup)
 }
 ```

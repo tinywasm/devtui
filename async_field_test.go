@@ -164,8 +164,8 @@ func TestAsyncState_Management(t *testing.T) {
 		t.Error("Field should not be running initially")
 	}
 
-	if field.asyncState.operationID != "" {
-		t.Error("Operation ID should be empty initially")
+	if field.asyncState.trackingID != "" {
+		t.Error("Tracking ID should be empty initially")
 	}
 
 	if field.asyncState.cancel != nil {

@@ -7,10 +7,10 @@ DevTUI is a **message presentation and formatting system** for terminal interfac
 **DevTUI is NOT a validation system, error handler, or business logic manager.**
 
 **DevTUI IS a display layer** that:
-- **Receives messages** from your handlers via `progress()` callbacks
+- **Receives messages** from your handlers via `progress()` callbacks or `SetLog()`
 - **Formats and organizes** those messages in a clean terminal interface  
 - **Manages the visual presentation** - tabs, navigation, scrolling, colors
-- **Provides structure** for development tools through minimal handler interfaces
+- **Provides structure** for development tools through a unified handler architecture
 
 You inject handlers that contain your business logic, and DevTUI simply displays whatever information they send through `progress()`. If your handler fails, succeeds, or needs to show status - it's the handler's responsibility to send the appropriate message. DevTUI just shows it.
 
@@ -34,7 +34,7 @@ A TUI that **acts as a pure presentation layer**, enabling:
 - **Organized message display** in the same terminal space (no infinite log accumulation)
 - **Automatic message formatting** and reordering (always showing what happened last)
 - **Clean navigation interface** maintaining focus without UI clutter
-- **Simple handler injection** where handlers send messages via `progress()` and DevTUI displays them
+- **Simple handler injection** where handlers send messages via `progress()` or a provided `log()` function, and DevTUI displays them automatically.
 
 **Key Principle**: DevTUI doesn't validate, process, or judge your data. It's a dumb display system that shows whatever your handlers tell it to show.
 
@@ -74,15 +74,15 @@ Handlers are **business logic components** that:
 - **Informative footer**: Context of the active handler
 - **Automatic ShortcutsHandler**: "SHORTCUTS" tab automatically loaded at position 0 with navigation help
 
-### MessageTracker: The Key Differentiator
+### Unified Logging and Clean Terminal
 **Traditional problem**: Logs accumulate infinitely creating visual noise.
 
-**MessageTracker solution**: 
-- Handlers can **update existing messages** instead of creating new ones
-- **Reuse the same space** on screen through `operationID`
-- **Progressive logs** showing current state of long operations with `progress` callbacks
-- **Clean history** without information saturation
-- **Thread-safe**: Protection with `sync.RWMutex` for concurrent operations
+**Unified solution**: 
+- **Automatic Tracking**: DevTUI matches messages to the handler's `Name()`.
+- **Clean Display**: Only the **most recent log entry** per handler is shown in the terminal.
+- **Full History**: DevTUI preserves the complete history internally for MCP tools and debugging.
+- **Simplicity**: No need for `AddLogger` or `MessageTracker` interfaces. Just implement `Loggable`.
+- **Thread-safe**: Handlers call their internal `log()` safely from any goroutine.
 
 ## Comparison with Other TUI Libraries
 
@@ -95,11 +95,11 @@ Handlers are **business logic components** that:
 - **Others**: General widgets for complete applications
 
 ### Unique Advantage: Functional Minimalism
-- **1-4 methods per handler** vs complex implementations
-- **Specialized interfaces** by specific purpose
-- **Minimal configuration** for common development use cases
-- **Method chaining**: `.WithTimeout()` and `.Register()` for fluid configuration
-- **Auto-detection**: Automatically recognizes capabilities like MessageTracker
+- **Unified registration**: Single `AddHandler()` method for all capabilities
+- **Loggable**: Automatically recognized for name-based logging
+- **Last log only**: Enforced clean view by default
+- **History preserved**: Full context available via external tools (MCP)
+- **Zero coupling**: Consumer packages don't depend on DevTUI
 
 ## Handler Types and Their Purposes
 
@@ -115,19 +115,9 @@ Handlers are **business logic components** that:
 **Purpose**: Action buttons with optional progress callbacks
 **Cases**: Compile, deploy, clear cache, restart services, backups
 
-### 4. HandlerLogger (1 method)
-**Purpose**: Basic logging (always new lines)
-**Cases**: Application logs, system events, command output
-
-### 5. HandlerLoggerTracker (3 methods)
-**Purpose**: Advanced logging (can update existing lines)
-**Cases**: Compilation progress, deployment status, continuous monitoring
-
-### Handlers with Tracking (*Tracker interfaces)
-All handlers can implement `MessageTracker` for advanced capabilities:
-- **HandlerEditTracker**: Edit + MessageTracker
-- **HandlerExecutionTracker**: Execution + MessageTracker  
-- **HandlerLoggerTracker**: Writer + MessageTracker (built-in)
+### 4. Loggable (2 methods)
+**Purpose**: Automatic logging with name-based tracking
+**Cases**: Compilation logs, server output, system events, long-running processes
 
 ## What DevTUI Does NOT Do
 

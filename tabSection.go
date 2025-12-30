@@ -62,74 +62,20 @@ func (hw *handlerWriter) Write(p []byte) (n int, err error) {
 	if msg != "" {
 		message, msgType := Translate(msg).StringType()
 
-		var operationID string
 		var handlerColor string
 		if handler := hw.tabSection.getWritingHandler(hw.handlerName); handler != nil {
-			operationID = handler.GetLastOperationID()
 			handlerColor = handler.handlerColor // NEW: Get handler color
 		}
 
-		hw.tabSection.tui.sendMessageWithHandler(message, msgType, hw.tabSection, hw.handlerName, operationID, handlerColor)
+		// operationID is now always the handlerName for tracking
+		trackingID := hw.handlerName
+		hw.tabSection.tui.sendMessageWithHandler(message, msgType, hw.tabSection, hw.handlerName, trackingID, handlerColor)
 
 		if msgType == Msg.Error {
 			hw.tabSection.tui.Logger(msg)
 		}
 	}
 	return len(p), nil
-}
-
-// registerLoggerFunc creates a logger function that handles variadic arguments
-func (ts *tabSection) registerLoggerFunc(handler HandlerLogger, color string) func(message ...any) {
-	ts.mu.Lock()
-	defer ts.mu.Unlock()
-
-	var anyH *anyHandler
-	// Automatically detect if handler implements HandlerLoggerTracker (Name + MessageTracker)
-	if tracker, ok := handler.(interface {
-		Name() string
-		GetLastOperationID() string
-		SetLastOperationID(string)
-	}); ok {
-		anyH = NewWriterTrackerHandler(tracker, color)
-	} else {
-		anyH = NewWriterHandler(handler, color)
-	}
-
-	ts.writingHandlers = append(ts.writingHandlers, anyH)
-	return func(message ...any) {
-		if len(message) == 0 {
-			return
-		}
-
-		// Format the message similar to fmt.Sprint
-		var msg string
-		if len(message) == 1 {
-			if str, ok := message[0].(string); ok {
-				msg = str
-			} else {
-				msg = Fmt("%v", message[0])
-			}
-		} else {
-			msg = Fmt("%v", message[0])
-			for _, m := range message[1:] {
-				msg += " " + Fmt("%v", m)
-			}
-		}
-
-		var operationID string
-		var handlerColor string
-		if handler := ts.getWritingHandler(anyH.Name()); handler != nil {
-			operationID = handler.GetLastOperationID()
-			handlerColor = handler.handlerColor // NEW: Get handler color
-		}
-
-		messageStr, msgType := Translate(msg).StringType()
-		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, anyH.Name(), operationID, handlerColor)
-
-		if msgType == Msg.Error {
-			ts.tui.Logger(msg)
-		}
-	}
 }
 
 // HandlerLogger wraps tabSection with handler identification
@@ -144,19 +90,16 @@ func (t *tabSection) addNewContent(msgType MessageType, content string) {
 	t.tabContents = append(t.tabContents, t.tui.createTabContent(content, msgType, t, "", "", ""))
 }
 
-// NEW: updateOrAddContentWithHandler updates existing content by operationID or adds new if not found
+// NEW: updateOrAddContentWithHandler updates existing content by handler name (trackingID)
 // Returns true if content was updated, false if new content was added
-func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content string, handlerName string, operationID string, handlerColor string) (updated bool, newContent tabContent) {
+func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content string, handlerName string, trackingID string, handlerColor string) (updated bool, newContent tabContent) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// If operationID is provided, try to find and update existing content
-	if operationID != "" {
+	// trackingID is now the handlerName for automatic tracking
+	if trackingID != "" {
 		for i := range t.tabContents {
-			// Match by both operationID and handlerName to ensure each handler updates its own message
-			if t.tabContents[i].operationID != nil &&
-				*t.tabContents[i].operationID == operationID &&
-				t.tabContents[i].RawHandlerName == handlerName {
+			if t.tabContents[i].RawHandlerName == trackingID {
 				// Update existing content
 				t.tabContents[i].Content = content
 				t.tabContents[i].Type = msgType
@@ -180,14 +123,14 @@ func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content 
 		}
 	}
 
-	// If not found or no operationID, add new content
-	newContent = t.tui.createTabContent(content, msgType, t, handlerName, operationID, handlerColor)
+	// If not found or no trackingID, add new content
+	newContent = t.tui.createTabContent(content, msgType, t, handlerName, trackingID, handlerColor)
 	t.tabContents = append(t.tabContents, newContent)
 	return false, newContent
 }
 
 // NewTabSection creates a new tab section and returns it as any for interface decoupling.
-// The returned value must be passed to AddHandler/AddLogger methods.
+// The returned value must be passed to the AddHandler method.
 //
 // Example:
 //

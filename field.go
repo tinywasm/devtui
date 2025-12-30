@@ -9,10 +9,10 @@ import (
 
 // Internal async state management (not exported)
 type internalAsyncState struct {
-	isRunning   bool
-	operationID string
-	cancel      context.CancelFunc
-	startTime   time.Time
+	isRunning  bool
+	trackingID string
+	cancel     context.CancelFunc
+	startTime  time.Time
 }
 
 // Field represents a field in the TUI with a handler-based approach
@@ -127,20 +127,6 @@ func (f *field) shouldAutoActivateEditMode() bool {
 // NEW: Trigger content display for interactive handlers via Change()
 func (f *field) triggerContentDisplay() {
 	if f.isInteractiveHandler() && f.handler != nil && !f.handler.WaitingForUser() {
-		// Follow EXACT same MessageTracker logic as executeChangeSyncWithTracking
-		var operationID string
-		if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.id != nil {
-			// Check if handler has existing operationID to reuse (for updates)
-			if existingID := f.handler.GetLastOperationID(); existingID != "" {
-				operationID = existingID
-			} else {
-				// Generate new ID for new operations
-				operationID = f.parentTab.tui.id.GetNewID()
-			}
-		}
-
-		// Create progress callback that follows MessageTracker logic
-
 		// Use helper to safely collect progress messages
 		progressChan, done := f.collectProgressMessages(func(msg string) {
 			// Process message immediately
@@ -151,9 +137,6 @@ func (f *field) triggerContentDisplay() {
 		f.handler.Change("", progressChan)
 		close(progressChan)
 		<-done
-
-		// Set operation ID on handler for tracking (same as executeChangeSyncWithTracking)
-		f.handler.SetLastOperationID(operationID)
 	}
 }
 
@@ -220,24 +203,17 @@ func (f *field) collectProgressMessages(processMessage func(string)) (progressCh
 }
 
 // sendMessage sends a message through parent tab with automatic type detection
-// REFACTORIZADO: Reemplaza sendProgressMessage, sendErrorMessage, sendSuccessMessage
 func (f *field) sendMessage(msgs ...any) {
 	if f.parentTab == nil || f.parentTab.tui == nil || len(msgs) == 0 {
 		return
 	}
 
-	// Get operation ID from async state or use empty string
-	var operationID string
-	if f.asyncState != nil && f.asyncState.operationID != "" {
-		operationID = f.asyncState.operationID
-	}
-
-	// Get handler name
+	// Get handler name and color
 	handlerName := ""
 	handlerColor := ""
 	if f.handler != nil {
 		handlerName = f.handler.Name()
-		handlerColor = f.handler.handlerColor // NEW: Get handler color
+		handlerColor = f.handler.handlerColor
 	}
 
 	// NEW: If handler has Content() method, refresh display instead of creating messages
@@ -246,9 +222,12 @@ func (f *field) sendMessage(msgs ...any) {
 		return
 	}
 
+	// trackingID is now the handlerName for automatic tracking
+	trackingID := handlerName
+
 	// Convert and send message with automatic type detection
 	message, msgType := Translate(msgs...).StringType()
-	f.parentTab.tui.sendMessageWithHandler(message, msgType, f.parentTab, handlerName, operationID, handlerColor)
+	f.parentTab.tui.sendMessageWithHandler(message, msgType, f.parentTab, handlerName, trackingID, handlerColor)
 }
 
 // executeAsyncChange executes the handler's Change method asynchronously
@@ -277,21 +256,8 @@ func (f *field) executeAsyncChange(valueToSave any) {
 	f.asyncState.cancel = cancel
 	f.asyncState.isRunning = true
 
-	// Generate ONE operation ID for the entire async operation OR reuse existing one
-	if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.id != nil {
-		// Check if handler has existing operationID to reuse (for updates)
-		if existingID := f.handler.GetLastOperationID(); existingID != "" {
-			f.asyncState.operationID = existingID
-		} else {
-			// Generate new ID for new operations
-			f.asyncState.operationID = f.parentTab.tui.id.GetNewID()
-		}
-	} else {
-		// Log when id is nil for debugging
-		if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.Logger != nil {
-			f.parentTab.tui.Logger("Warning: Cannot generate operation ID, unixid not initialized")
-		}
-	}
+	// trackingID is now the handlerName for automatic tracking
+	f.asyncState.trackingID = f.handler.Name()
 	f.asyncState.startTime = time.Now()
 
 	// Use the pre-captured value instead of getCurrentValue()
@@ -417,40 +383,26 @@ func (f *field) executeChangeSyncWithValue(valueToSave any) {
 	// The test can verify the handler's internal state directly
 }
 
-// executeChangeSyncWithTracking executes the handler's Change method synchronously but maintains operation ID tracking
-// This is specifically for testing operation ID reuse functionality
+// executeChangeSyncWithTracking executes the handler's Change method synchronously but maintains automatic tracking
 func (f *field) executeChangeSyncWithTracking(valueToSave any) {
 	if f.handler == nil {
 		return
 	}
 
-	// Generate or reuse operation ID like in async mode
-	var operationID string
-	if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.id != nil {
-		// Check if handler has existing operationID to reuse (for updates)
-		if existingID := f.handler.GetLastOperationID(); existingID != "" {
-			operationID = existingID
-		} else {
-			// Generate new ID for new operations
-			operationID = f.parentTab.tui.id.GetNewID()
-		}
-	}
-
-	// Create progress callback that sends messages with operation tracking
+	// Automatic tracking uses handlerName
 	handlerName := f.handler.Name()
-	handlerColor := f.handler.handlerColor // NEW: Get handler color
+	handlerColor := f.handler.handlerColor
 
 	// Use helper to safely collect progress messages
 	progressChan, done := f.collectProgressMessages(func(msg string) {
 		if f.parentTab != nil {
-			// NEW: If handler has Content() method, refresh display instead of creating messages
 			if f.hasContentMethod() {
 				f.parentTab.tui.updateViewport()
 				return
 			}
 			// For regular handlers, create timestamped messages with tracking
 			_, msgType := Translate(msg).StringType()
-			f.parentTab.tui.sendMessageWithHandler(msg, msgType, f.parentTab, handlerName, operationID, handlerColor)
+			f.parentTab.tui.sendMessageWithHandler(msg, msgType, f.parentTab, handlerName, handlerName, handlerColor)
 		}
 	})
 
@@ -459,19 +411,14 @@ func (f *field) executeChangeSyncWithTracking(valueToSave any) {
 	close(progressChan)
 	<-done
 
-	// Set operation ID on handler for tracking
-	f.handler.SetLastOperationID(operationID)
-
 	// Send success message (unless handler has Content() method)
 	if f.parentTab != nil {
-		// NEW: If handler has Content() method, only refresh display
 		if f.hasContentMethod() {
 			f.parentTab.tui.updateViewport()
 		} else {
-			// For regular handlers, send success message
 			result := f.handler.Value()
 			_, msgType := Translate(result).StringType()
-			f.parentTab.tui.sendMessageWithHandler(result, msgType, f.parentTab, handlerName, operationID, handlerColor)
+			f.parentTab.tui.sendMessageWithHandler(result, msgType, f.parentTab, handlerName, handlerName, handlerColor)
 		}
 	}
 }

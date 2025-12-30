@@ -1,6 +1,7 @@
 package devtui
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
@@ -15,29 +16,22 @@ func TestPaginationWritersOnlyTab(t *testing.T) {
 	// Create a tab with only writers, no field handlers
 	h.TabSections = h.TabSections[:0]
 	logs := h.NewTabSection("Logs", "System Logs")
-	// Minimal SystemLogWriter for test
 
 	h.activeTab = 0
-	_ = h.AddLogger("SystemLogWriter", false, "", logs)
+	h.AddHandler(&SystemLogWriter{name: "SystemLog"}, 0, "", logs)
 
-	h.activeTab = 0
 	// Call the real footerView rendering logic
 	output := h.footerView()
 	expected := "1/ 1" // Look for the core pagination text without spacing
-	// Use strings.Contains for ANSI-aware searching
-	found := false
-	for i := 0; i <= len(output)-len(expected); i++ {
-		if output[i:i+len(expected)] == expected {
-			found = true
-			break
-		}
-	}
-	if !found {
+	if !strings.Contains(output, expected) {
 		t.Errorf("Writers-only tab pagination failed: got %q, want %q", output, expected)
 	}
 }
 
-// Minimal SystemLogWriter for test
-type SystemLogWriter struct{}
+// SystemLogWriter for test
+type SystemLogWriter struct {
+	name string
+}
 
-func (w *SystemLogWriter) Name() string { return "SystemLog" }
+func (w *SystemLogWriter) Name() string          { return w.name }
+func (w *SystemLogWriter) SetLog(f func(...any)) {}

@@ -44,17 +44,38 @@ func TestValidateTabSection_WrongDevTUI(t *testing.T) {
 	tui2.AddHandler(&validationTestHandler{}, time.Second, "", tab)
 }
 
+func (h *validationTestDisplayHandler) Content() string {
+	return "display value"
+}
+
 func TestValidateTabSection_Success(t *testing.T) {
 	tui := NewTUI(&TuiConfig{})
 	tab := tui.NewTabSection("TEST", "test")
 
 	// Should not panic
 	tui.AddHandler(&validationTestDisplayHandler{name: "test"}, 0, "", tab)
-	log := tui.AddLogger("test", true, "", tab)
 
-	if log == nil {
-		t.Error("Expected logger function, got nil")
+	// Loggable handlers are registered via AddHandler
+	h := &validationTestLoggableHandler{name: "logger"}
+	tui.AddHandler(h, 0, "", tab)
+
+	if h.logFunc == nil {
+		t.Error("Expected logger function to be injected, got nil")
 	}
+}
+
+// validationTestLoggableHandler is a minimal loggable handler for testing purposes
+type validationTestLoggableHandler struct {
+	name    string
+	logFunc func(message ...any)
+}
+
+func (h *validationTestLoggableHandler) Name() string {
+	return h.name
+}
+
+func (h *validationTestLoggableHandler) SetLog(f func(message ...any)) {
+	h.logFunc = f
 }
 
 // validationTestHandler is a minimal handler for testing purposes

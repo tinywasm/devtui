@@ -36,17 +36,15 @@ func (h *testRunHandler) Execute(progress chan<- string) {
 	}
 }
 
-type testLoggerBasic struct{}
-
-func (w *testLoggerBasic) Name() string { return "TestWriter" }
-
-type testLoggerTracker struct {
-	lastOpID string
+type testLoggableHandler struct {
+	name    string
+	logFunc func(message ...any)
 }
 
-func (w *testLoggerTracker) Name() string                 { return "TestTrackerLogger" }
-func (w *testLoggerTracker) GetLastOperationID() string   { return w.lastOpID }
-func (w *testLoggerTracker) SetLastOperationID(id string) { w.lastOpID = id }
+func (h *testLoggableHandler) Name() string { return h.name }
+func (h *testLoggableHandler) SetLog(f func(message ...any)) {
+	h.logFunc = f
+}
 
 func TestNewAPIHandlers(t *testing.T) {
 	// Create TUI
@@ -70,9 +68,11 @@ func TestNewAPIHandlers(t *testing.T) {
 	tui.AddHandler(&testRunHandler{}, 0, "", tab)              // Sync
 	tui.AddHandler(&testRunHandler{}, 10*time.Second, "", tab) // Async
 
-	// Test Writer registration
-	basicLogger := tui.AddLogger("testLoggerBasic", false, "", tab)
-	trackerLogger := tui.AddLogger("testLoggerTracker", true, "", tab)
+	// Test Loggable registration
+	l1 := &testLoggableHandler{name: "Log1"}
+	l2 := &testLoggableHandler{name: "Log2"}
+	tui.AddHandler(l1, 0, "", tab)
+	tui.AddHandler(l2, 0, "", tab)
 
 	// Verify field count (5 fields registered)
 	tabSection := tab.(*tabSection)
@@ -104,19 +104,17 @@ func TestNewAPIHandlers(t *testing.T) {
 		t.Error("Fourth field should not be display-only")
 	}
 
-	// Test writers
-	if basicLogger == nil {
-		t.Error("Basic writer should not be nil")
+	// Verify Loggable injection
+	if l1.logFunc == nil {
+		t.Error("Log1 should have logger injected")
 	}
-	if trackerLogger == nil {
-		t.Error("Tracker writer should not be nil")
+	if l2.logFunc == nil {
+		t.Error("Log2 should have logger injected")
 	}
 
-	// Test calling basic logger function
-	basicLogger("test message")
-
-	// Test calling tracker logger function
-	trackerLogger("tracked message")
+	// Test calling log functions
+	l1.logFunc("test message")
+	l2.logFunc("tracked message")
 
 	// Verify writing handlers were registered
 	if len(tabSection.writingHandlers) != 2 {

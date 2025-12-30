@@ -24,18 +24,6 @@ type HandlerExecution interface {
 	Execute(progress chan<- string) // Execute action + content display via progress
 }
 
-// HandlerLogger defines the interface for basic writers that create new lines for each write.
-// These writers are suitable for simple logging or output display.
-type HandlerLogger interface {
-	Name() string // Writer identifier (e.g., "webBuilder", "ApplicationLog")
-}
-
-// HandlerLoggerTracker defines the interface for advanced writers that can update existing lines.
-// These writers support message tracking and can modify previously written content.
-// HandlerLoggerTracker defines the interface for advanced writers that can update existing lines.
-// These writers support message tracking and can modify previously written content.
-// This interface has been removed to limit public exposure.
-
 // HandlerInteractive defines the interface for interactive content handlers.
 // These handlers combine content display with user interaction capabilities.
 // All content display is handled through progress() for consistency.
@@ -47,15 +35,44 @@ type HandlerInteractive interface {
 	WaitingForUser() bool                           // Should edit mode be auto-activated?
 }
 
-// MessageTracker provides optional interface for message tracking control.
-// Handlers can implement this to control message updates and operation tracking.
-type MessageTracker interface {
-	GetLastOperationID() string
-	SetLastOperationID(id string)
-}
-
 // ShortcutProvider defines the optional interface for handlers that provide global shortcuts.
 // HandlerEdit implementations can implement this interface to enable global shortcut keys.
 type ShortcutProvider interface {
 	Shortcuts() []map[string]string // Returns ordered list of single-entry maps with shortcut->description, preserving registration order
+}
+
+// Loggable defines optional logging capability for handlers.
+// Handlers implementing this receive a logger function from DevTUI
+// when registered via AddHandler.
+//
+// The log function provided by DevTUI:
+// - Is never nil (safe to call immediately)
+// - Automatically tracks messages by handler Name()
+// - Stores full history internally
+// - Displays only most recent log in terminal (clean view)
+//
+// Example implementation:
+//
+//	type WasmClient struct {
+//	    log func(message ...any)
+//	}
+//
+//	func NewWasmClient() *WasmClient {
+//	    return &WasmClient{
+//	        log: func(message ...any) {}, // no-op until SetLog called
+//	    }
+//	}
+//
+//	func (w *WasmClient) Name() string { return "WASM" }
+//
+//	func (w *WasmClient) SetLog(logger func(message ...any)) {
+//	    w.log = logger
+//	}
+//
+//	func (w *WasmClient) Compile() {
+//	    w.log("Compiling...")
+//	}
+type Loggable interface {
+	Name() string
+	SetLog(logger func(message ...any))
 }
