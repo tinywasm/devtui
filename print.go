@@ -1,8 +1,8 @@
 package devtui
 
 import (
-	. "github.com/tinywasm/fmt"
 	"github.com/charmbracelet/lipgloss"
+	. "github.com/tinywasm/fmt"
 )
 
 // NEW: sendMessageWithHandler sends a message with handler identification
@@ -65,6 +65,9 @@ func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 		timeStr = t.generateTimestampPlain(msg.Timestamp)
 		handlerName = t.formatHandlerNamePlain(msg.handlerName)
 	}
+
+	// short paths
+	content = Convert(content).PathShort().String()
 
 	// Check if message comes from interactive handler - clean format with timestamp only
 	if msg.handlerName != "" && t.isInteractiveHandler(msg.handlerName) {

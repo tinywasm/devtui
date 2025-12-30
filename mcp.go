@@ -4,6 +4,10 @@ import (
 	. "github.com/tinywasm/fmt"
 )
 
+const (
+	MCPToolName = "terminal_logs"
+)
+
 // MCPToolMetadata provides MCP tool configuration metadata.
 // Fields must match mcpserve.ToolMetadata for reflection compatibility.
 // DevTUI does NOT import mcpserve to maintain decoupling.
@@ -43,7 +47,7 @@ func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
 
 	return []MCPToolMetadata{
 		{
-			Name:        "devtui_get_section_logs",
+			Name:        MCPToolName,
 			Description: description,
 			Parameters: []MCPParameterMetadata{
 				{

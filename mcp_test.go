@@ -75,8 +75,8 @@ func TestGetMCPToolsMetadata(t *testing.T) {
 	}
 
 	tool := tools[0]
-	if tool.Name != "devtui_get_section_logs" {
-		t.Errorf("Expected tool name 'devtui_get_section_logs', got '%s'", tool.Name)
+	if tool.Name != MCPToolName {
+		t.Errorf("Expected tool name '%s', got '%s'", MCPToolName, tool.Name)
 	}
 
 	// Verify parameter has enum values
