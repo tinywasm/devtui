@@ -99,28 +99,44 @@ func TestGetMCPToolsMetadata(t *testing.T) {
 
 func TestMCPGetSectionLogsListsSections(t *testing.T) {
 	exitChan := make(chan bool)
+
+	// Capture logger output
+	var loggedMessages []string
 	tui := NewTUI(&TuiConfig{
 		AppName:  "TestApp",
 		ExitChan: exitChan,
 		Color:    DefaultPalette(),
-		Logger:   func(messages ...any) {},
+		Logger: func(messages ...any) {
+			for _, msg := range messages {
+				if str, ok := msg.(string); ok {
+					loggedMessages = append(loggedMessages, str)
+				}
+			}
+		},
 	})
 	tui.SetTestMode(true)
+
+	// Inject MCP logger (simulates what mcpserve does)
+	tui.SetLog(func(messages ...any) {
+		for _, msg := range messages {
+			if str, ok := msg.(string); ok {
+				loggedMessages = append(loggedMessages, str)
+			}
+		}
+	})
 
 	tui.NewTabSection("BUILD", "Build Section")
 	tui.NewTabSection("DEPLOY", "Deploy Section")
 
 	// Call tool with empty section (should list sections)
-	progress := make(chan any, 10)
-	tui.mcpGetSectionLogs(map[string]any{"section": ""}, progress)
+	tui.mcpGetSectionLogs(map[string]any{"section": ""})
 
-	// Get result
-	result := <-progress
-	resultStr, ok := result.(string)
-	if !ok {
-		t.Fatalf("Expected string result, got %T", result)
+	// Verify logger received the message
+	if len(loggedMessages) == 0 {
+		t.Fatal("Expected logger to receive messages")
 	}
 
+	resultStr := loggedMessages[0]
 	if !strings.Contains(resultStr, "Available sections:") {
 		t.Errorf("Result should list available sections:\n%s", resultStr)
 	}

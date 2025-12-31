@@ -5,8 +5,23 @@ import (
 )
 
 const (
-	MCPToolName = "terminal_logs"
+	MCPToolName = "app_get_logs"
 )
+
+// ToolExecutor defines how a tool should be executed
+type ToolExecutor func(args map[string]any)
+
+// Name implements Loggable interface for MCP integration
+func (d *DevTUI) Name() string {
+	return "DEVTUI"
+}
+
+// SetLog implements Loggable interface for MCP integration
+// This allows mcpserve to inject a capturing logger
+func (d *DevTUI) SetLog(log func(message ...any)) {
+	// Store in separate field to avoid interfering with TUI's Logger
+	d.mcpLogger = log
+}
 
 // MCPToolMetadata provides MCP tool configuration metadata.
 // Fields must match mcpserve.ToolMetadata for reflection compatibility.
@@ -15,7 +30,7 @@ type MCPToolMetadata struct {
 	Name        string
 	Description string
 	Parameters  []MCPParameterMetadata
-	Execute     func(args map[string]any, progress chan<- any)
+	Execute     ToolExecutor // Changed from 2-param to 1-param signature to match client pattern
 }
 
 // MCPParameterMetadata describes a tool parameter.
@@ -36,7 +51,9 @@ func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
 	sectionTitles := d.getSectionTitles()
 
 	// Build dynamic description with available sections
-	description := "Get logs from a specific DevTUI terminal section (tab). Available sections: "
+	description := "Get real-time application logs and status from development environment sections. " +
+		"Returns current state of compilation, server, assets, browser, and other active components. " +
+		"Available sections: "
 	for i, title := range sectionTitles {
 		if i > 0 {
 			description += ", "
@@ -52,7 +69,7 @@ func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
 			Parameters: []MCPParameterMetadata{
 				{
 					Name:        "section",
-					Description: "Section title to get logs from. Leave empty to list available sections.",
+					Description: "Section name to get logs from (e.g., BUILD, DEPLOY). Leave empty to list all available sections.",
 					Required:    false,
 					Type:        "string",
 					EnumValues:  sectionTitles,
@@ -73,8 +90,8 @@ func (d *DevTUI) getSectionTitles() []string {
 	return titles
 }
 
-// mcpGetSectionLogs implements the devtui_get_section_logs tool
-func (d *DevTUI) mcpGetSectionLogs(args map[string]any, progress chan<- any) {
+// mcpGetSectionLogs implements the terminal_logs tool
+func (d *DevTUI) mcpGetSectionLogs(args map[string]any) {
 	sectionName, _ := args["section"].(string)
 
 	// If no section specified, list available sections
@@ -84,7 +101,9 @@ func (d *DevTUI) mcpGetSectionLogs(args map[string]any, progress chan<- any) {
 		for _, section := range d.TabSections {
 			result += Fmt("- %s\n", section.title)
 		}
-		progress <- result
+		if d.mcpLogger != nil {
+			d.mcpLogger(result)
+		}
 		return
 	}
 
@@ -98,18 +117,24 @@ func (d *DevTUI) mcpGetSectionLogs(args map[string]any, progress chan<- any) {
 	}
 
 	if targetSection == nil {
-		progress <- Fmt("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles())
+		if d.mcpLogger != nil {
+			d.mcpLogger(Fmt("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles()))
+		}
 		return
 	}
 
 	// Get logs in plain format
 	logs := d.getSectionLogsPlain(targetSection)
 	if logs == "" {
-		progress <- Fmt("Section '%s' has no logs yet.", sectionName)
+		if d.mcpLogger != nil {
+			d.mcpLogger(Fmt("Section '%s' has no logs yet.", sectionName))
+		}
 		return
 	}
 
-	progress <- logs
+	if d.mcpLogger != nil {
+		d.mcpLogger(logs)
+	}
 }
 
 // getSectionLogsPlain returns the logs of a section without ANSI styling

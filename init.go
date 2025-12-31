@@ -43,6 +43,9 @@ type DevTUI struct {
 	tabContentsChan chan tabContent
 	tea             *tea.Program
 	testMode        bool // private: only used in tests to enable synchronous behavior
+
+	// MCP integration: separate logger for MCP tool execution
+	mcpLogger func(message ...any) // injected by mcpserve via SetLog()
 }
 
 type TuiConfig struct {
