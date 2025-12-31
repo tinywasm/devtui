@@ -1,199 +1,73 @@
-# DevTUI - Complete Purpose and Functionality Description
+# DevTUI - Detailed Description
 
-## What is DevTUI?
+DevTUI is a specialized Terminal User Interface library designed for Go development tools (like `godev` and `cdvelop`). It focuses on displaying logs and process statuses in an organized, readable way while providing a decoupled architecture that keeps your business logic clean.
 
-DevTUI is a **message presentation and formatting system** for terminal interfaces, built on top of [bubbletea](https://github.com/charmbracelet/bubbletea) and [bubbles](https://github.com/charmbracelet/bubbles). 
+## Core Philosophy
 
-**DevTUI is NOT a validation system, error handler, or business logic manager.**
+1.  **Decoupling**: DevTUI uses a consumer-driven interface pattern. Your application defines the UI interfaces it needs, and DevTUI implements them. This allows you to write business logic without importing DevTUI directly, making testing easier and dependencies cleaner.
+2.  **Clean Terminal**: Most development tools spam the terminal with logs. DevTUI organizes logs by "handlers" (components) and by default shows only the **most recent status message** for each component.
+3.  **Universal Registration**: A single `AddHandler` method accepts any supported handler type, simplifying the API surface.
 
-**DevTUI IS a display layer** that:
-- **Receives messages** from your handlers via `progress()` callbacks or `SetLog()`
-- **Formats and organizes** those messages in a clean terminal interface  
-- **Manages the visual presentation** - tabs, navigation, scrolling, colors
-- **Provides structure** for development tools through a unified handler architecture
+## Architecture
 
-You inject handlers that contain your business logic, and DevTUI simply displays whatever information they send through `progress()`. If your handler fails, succeeds, or needs to show status - it's the handler's responsibility to send the appropriate message. DevTUI just shows it.
+DevTUI is built on the [Bubble Tea](https://github.com/charmbracelet/bubbletea) framework.
 
-## Problem it Solves
+### The `tabSection` Concept
 
-### The Original Problem
-During development of Go-to-WASM compilation tools with:
-- File change detection
-- DevBrowser hot reload
-- CSS/JS file minification
-- Complex configuration for full-stack Go applications
+The interface is organized into **Tab Sections**. Each section represents a major domain of your application (e.g., "Build", "Deploy", "Database").
+Inside a section, you register **Handlers**.
 
-**The problems were:**
-- Too many scattered logs everywhere
-- Complex and confusing visual information
-- Difficult to understand what was really happening
-- The view layer grew too much and became unmanageable
+### Handlers
 
-### The Solution: DevTUI
-A TUI that **acts as a pure presentation layer**, enabling:
-- **Organized message display** in the same terminal space (no infinite log accumulation)
-- **Automatic message formatting** and reordering (always showing what happened last)
-- **Clean navigation interface** maintaining focus without UI clutter
-- **Simple handler injection** where handlers send messages via `progress()` or a provided `log()` function, and DevTUI displays them automatically.
+A "Handler" is a component that does something and produces logs. DevTUI supports several handler types via interfaces:
 
-**Key Principle**: DevTUI doesn't validate, process, or judge your data. It's a dumb display system that shows whatever your handlers tell it to show.
+1.  **HandlerDisplay**: Read-only information.
+2.  **HandlerEdit**: Input fields for configuration.
+3.  **HandlerExecution**: Action buttons (e.g., "Deploy").
+4.  **HandlerInteractive**: Components that handle user interaction and display dynamic content.
+5.  **Loggable**: Any handler can implement `Loggable` to receive a `log` function. Messages sent to this logger are automatically tracked and displayed.
 
-## Ideal Use Cases
+### Universal `AddHandler` API
 
-### Minimalist Development Tools
-- **Real-time compilers** (Go-to-WASM, etc.)
-- **File monitors** with automatic actions
-- **Development dashboards** with live metrics
-- **Configuration interfaces** for complex pipelines
-- **Build tools** with multiple steps
-- **Asset minifiers** with visual progress
+The `AddHandler` method is the single entry point for registering any component. It uses Go's type system to detect which interfaces your handler implements.
 
-### Integration with Development Environments
-- **VS Code**: Integrated terminal with limited space
-- **Text editors**: Auxiliary panel for monitoring
-- **CI/CD pipelines**: Real-time monitoring interface
-- **Docker workflows**: Container configuration and status
-
-## Architecture and Key Concepts
-
-### What are "Handlers"?
-Handlers are **business logic components** that:
-- **Contain your application logic** (compilation, configuration, deployment, etc.)
-- **Decide their own state** and validation rules
-- **Send information to DevTUI** via `progress()` callbacks
-- **Handle their own errors** by sending appropriate messages
-
-**They are NOT UI widgets** - they are **functionality containers** that use DevTUI as their display layer. DevTUI automatically provides the UI structure (tabs, navigation, formatting) based on handler type.
-
-**Critical**: DevTUI doesn't care if your handler succeeds or fails. It only cares about displaying the messages your handler sends.
-
-### Tab System and Organization
-- **Thematic tabs**: Group related handlers (Config, Build, Logs, etc.)
-- **One active element**: Only one handler is shown at a time (maintains focus)
-- **Arrow navigation**: Left/Right to switch between handlers, Tab/Shift+Tab to switch between tabs
-- **Informative footer**: Context of the active handler
-- **Automatic ShortcutsHandler**: "SHORTCUTS" tab automatically loaded at position 0 with navigation help
-
-### Unified Logging and Clean Terminal
-**Traditional problem**: Logs accumulate infinitely creating visual noise.
-
-**Unified solution**: 
-- **Automatic Tracking**: DevTUI matches messages to the handler's `Name()`.
-- **Clean Display**: Only the **most recent log entry** per handler is shown in the terminal.
-- **Full History**: DevTUI preserves the complete history internally for MCP tools and debugging.
-- **Simplicity**: No need for `AddLogger` or `MessageTracker` interfaces. Just implement `Loggable`.
-- **Thread-safe**: Handlers call their internal `log()` safely from any goroutine.
-
-## Comparison with Other TUI Libraries
-
-### vs bubbletea + bubbles (base)
-- **DevTUI**: Pre-configured abstraction with specific patterns and integrated viewport
-- **bubbletea/bubbles**: General framework, requires implementing all UI logic
-
-### vs tview, termui, gocui
-- **DevTUI**: Focus on injectable handlers for development
-- **Others**: General widgets for complete applications
-
-### Unique Advantage: Functional Minimalism
-- **Unified registration**: Single `AddHandler()` method for all capabilities
-- **Loggable**: Automatically recognized for name-based logging
-- **Last log only**: Enforced clean view by default
-- **History preserved**: Full context available via external tools (MCP)
-- **Zero coupling**: Consumer packages don't depend on DevTUI
-
-## Handler Types and Their Purposes
-
-### 1. HandlerDisplay (2 methods)
-**Purpose**: Read-only information that displays immediately
-**Cases**: System status, metrics, help (like ShortcutsHandler), current configuration
-
-### 2. HandlerEdit (4 methods)
-**Purpose**: Interactive input fields with validation
-**Cases**: Port configuration, URLs, file paths, compilation parameters
-
-### 3. HandlerExecution (3 methods)
-**Purpose**: Action buttons with optional progress callbacks
-**Cases**: Compile, deploy, clear cache, restart services, backups
-
-### 4. Loggable (2 methods)
-**Purpose**: Automatic logging with name-based tracking
-**Cases**: Compilation logs, server output, system events, long-running processes
-
-## What DevTUI Does NOT Do
-
-**DevTUI is explicitly NOT responsible for:**
-
-- ❌ **Validating user input** - Your handlers validate their own data
-- ❌ **Managing errors** - Your handlers decide how to handle their failures  
-- ❌ **Business logic** - Your handlers contain all the application logic
-- ❌ **Data persistence** - Your handlers manage their own state
-- ❌ **Network operations** - Your handlers handle their own I/O
-- ❌ **File operations** - Your handlers manage their own file access
-- ❌ **Complex decision making** - Your handlers make all the decisions
-
-**DevTUI only cares about:**
-- ✅ **Displaying messages** that handlers send via `progress()`
-- ✅ **Formatting the terminal interface** (colors, layout, navigation)
-- ✅ **Managing UI state** (active tab, scroll position, focus)
-- ✅ **Providing structure** through minimal handler interfaces
-
-**Example of responsibility separation:**
 ```go
-// Handler is responsible for ALL business logic
-func (h *DatabaseHandler) Change(newValue any, progress func(string)) {
-    // Handler validates input
-    if !h.validateConnectionString(newValue.(string)) {
-        progress("Error: Invalid connection format")
-        return // Handler decides not to change state
-    }
-    
-    // Handler tests connection
-    if !h.testConnection(newValue.(string)) {
-        progress("Error: Cannot connect to database")
-        return // Handler decides not to change state
-    }
-    
-    // Handler updates its own state
-    h.connectionString = newValue.(string)
-    progress("Database connection updated successfully")
-}
-
-// DevTUI simply displays whatever message the handler sends
-// It doesn't know or care if the operation succeeded or failed
+// Universal registration
+tui.AddHandler(myHandler, timeout, color, tabSection)
 ```
 
-## When NOT to use DevTUI
+## Logging & Tracking
 
-- **Complex end-user applications** (use tview, bubbletea directly)
-- **Multi-window GUIs** (DevTUI is single-window)
-- **Highly customized interfaces** (DevTUI prioritizes consistency)
-- **Web or desktop applications** (DevTUI is terminal-specific)
+DevTUI's logging system is unique:
 
-## Technical Benefits
+-   **Last Message Only**: By default, only the last message from each handler is shown in the main view. This keeps the UI stable and readable.
+-   **Full History**: The full log history is preserved internally.
+-   **MCP Integration**: DevTUI exposes an MCP (Model Context Protocol) tool called `app_get_logs`. AI agents or external tools can query this tool to retrieve the full log history for debugging, even though the user sees a clean UI.
 
-### For the Developer
-- **Pure presentation layer**: No mixing of business logic with display concerns
-- **Handler autonomy**: Each handler manages its own state and validation
-- **Simple message interface**: Just send strings via `progress()` - DevTUI handles the rest
-- **Fast implementation**: Minimal interfaces (1-4 methods per handler)
-- **Zero error handling**: DevTUI displays whatever you send - no error management complexity
-- **Reusability**: Portable handlers between projects (business logic stays separate)
-- **Testing**: Test your handler logic independently of display layer
+## Progress System
 
-### For the End User
-- **Consistent experience**: Standard navigation across all tools
-- **Organized information**: No visual saturation, viewport with automatic scroll
-- **Real-time feedback**: Progress callbacks and message tracking
-- **Efficient space**: Maximum terminal utilization
-- **Integrated help**: Automatic ShortcutsHandler with navigation commands
+For long-running operations, handlers receive a `chan<- string` (progress channel).
+-   Send simple strings to update the status.
+-   DevTUI manages the channel lifecycle.
+-   Status updates appear instantly in the UI.
 
-## Relationship with GoDEV App
+## Keyboard Shortcuts
 
-DevTUI is the **main interface** of GoDEV App, a Go development tool that includes:
-- Go-to-WASM compilation
-- DevBrowser hot reload
-- Asset minification
-- Dependency management
-- File monitoring
+DevTUI has a built-in global shortcut system.
+-   Handlers can implement `Shortcuts() []map[string]string`.
+-   These shortcuts are active globally (from any tab).
+-   Pressing the key navigates to the handler and triggers its action.
 
-GoDEV demonstrated the need to separate the view layer, giving rise to DevTUI as an independent project.
+## Testing
+
+The decoupled design makes testing your application trivial. You can mock the UI interface in your tests without needing a real TUI instance.
+
+```go
+// Your code depends on this interface
+type UI interface {
+    NewTabSection(title, description string) any
+    AddHandler(handler any, timeout time.Duration, color string, tabSection any)
+}
+```
+
+This allows you to verify that your application registers the correct handlers and sends the expected logs without running a terminal UI during tests.
