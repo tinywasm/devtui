@@ -25,6 +25,7 @@ type shortcutsInteractiveHandler struct {
 	needsLanguageInput bool    // Controls when to activate edit mode
 	lastOpID           string  // Operation ID for tracking
 	tui                *DevTUI // NEW: Reference to TUI for shortcut registry access
+	log                func(message ...any)
 }
 
 func (h *shortcutsInteractiveHandler) Name() string {
@@ -41,11 +42,17 @@ func (h *shortcutsInteractiveHandler) SetLastOperationID(id string) { h.lastOpID
 
 func (h *shortcutsInteractiveHandler) Value() string { return Convert(h.lang).ToLower().String() }
 
-// Change handles both content display and user input via progress()
-func (h *shortcutsInteractiveHandler) Change(newValue string, progress chan<- string) {
+func (h *shortcutsInteractiveHandler) SetLog(f func(message ...any)) {
+	h.log = f
+}
+
+// Change handles both content display and user input via log()
+func (h *shortcutsInteractiveHandler) Change(newValue string) {
 	if newValue == "" && !h.needsLanguageInput {
 		// Display help content when field is selected (not in edit mode)
-		progress <- h.generateHelpContent()
+		if h.log != nil {
+			h.log(h.generateHelpContent())
+		}
 		return
 	}
 
@@ -55,7 +62,9 @@ func (h *shortcutsInteractiveHandler) Change(newValue string, progress chan<- st
 	h.needsLanguageInput = false
 
 	// Show updated help content
-	progress <- h.generateHelpContent()
+	if h.log != nil {
+		h.log(h.generateHelpContent())
+	}
 }
 
 func (h *shortcutsInteractiveHandler) WaitingForUser() bool {

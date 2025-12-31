@@ -42,6 +42,9 @@ type tabSection struct {
 
 	// Writing handler registry for external handlers using new interfaces
 	writingHandlers []*anyHandler // CAMBIO: slice en lugar de map para thread-safety
+
+	// Animation state management
+	animationStopChans map[string]chan struct{}
 }
 
 // getWritingHandler busca un handler por nombre en el slice thread-safe
@@ -141,6 +144,7 @@ func (t *DevTUI) NewTabSection(title, description string) any {
 		title:              title,
 		sectionDescription: description,
 		tui:                t,
+		animationStopChans: make(map[string]chan struct{}),
 	}
 
 	// Automatically add to TabSections and initialize
@@ -167,4 +171,46 @@ func (t *DevTUI) initTabSection(section *tabSection, index int) {
 		handlers[j].cursor = 0
 	}
 	section.setFieldHandlers(handlers)
+}
+
+// stopAnimation stops any running animation for a given handler
+func (ts *tabSection) stopAnimation(handlerName string) {
+	ts.mu.Lock()
+	defer ts.mu.Unlock()
+
+	if stopChan, ok := ts.animationStopChans[handlerName]; ok {
+		close(stopChan)
+		delete(ts.animationStopChans, handlerName)
+	}
+}
+
+// startAnimation starts a new auto-animation for a given handler
+func (ts *tabSection) startAnimation(handlerName, baseMessage string, msgType MessageType, color string) {
+	// First stop any existing animation
+	ts.stopAnimation(handlerName)
+
+	stopChan := make(chan struct{})
+	ts.mu.Lock()
+	ts.animationStopChans[handlerName] = stopChan
+	ts.mu.Unlock()
+
+	go func() {
+		dots := ""
+		ticker := time.NewTicker(400 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-stopChan:
+				return
+			case <-ticker.C:
+				dots += " ."
+				if len(dots) > 6 { // Max 3 dots " . . ."
+					dots = ""
+				}
+				// Update the same line (using handlerName as trackingID)
+				ts.tui.sendMessageWithHandler(baseMessage+dots, msgType, ts, handlerName, handlerName, color)
+			}
+		}
+	}()
 }

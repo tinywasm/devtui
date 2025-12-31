@@ -10,29 +10,29 @@ type HandlerDisplay interface {
 // HandlerEdit defines the interface for interactive fields that accept user input.
 // These handlers allow users to modify values through text input.
 type HandlerEdit interface {
-	Name() string                                   // Identifier for logging: "ServerPort", "DatabaseURL"
-	Label() string                                  // Field label (e.g., "Server Port", "Host Configuration")
-	Value() string                                  // Current/initial value (e.g., "8080", "localhost")
-	Change(newValue string, progress chan<- string) // Handle user input + content display via progress
+	Name() string           // Identifier for logging: "ServerPort", "DatabaseURL"
+	Label() string          // Field label (e.g., "Server Port", "Host Configuration")
+	Value() string          // Current/initial value (e.g., "8080", "localhost")
+	Change(newValue string) // Handle user input + content display via log
 }
 
 // HandlerExecution defines the interface for action buttons that execute operations.
 // These handlers trigger business logic when activated by the user.
 type HandlerExecution interface {
-	Name() string                   // Identifier for logging: "DeployProd", "BuildProject"
-	Label() string                  // Button label (e.g., "Deploy to Production", "Build Project")
-	Execute(progress chan<- string) // Execute action + content display via progress
+	Name() string  // Identifier for logging: "DeployProd", "BuildProject"
+	Label() string // Button label (e.g., "Deploy to Production", "Build Project")
+	Execute()      // Execute action + content display via log
 }
 
 // HandlerInteractive defines the interface for interactive content handlers.
 // These handlers combine content display with user interaction capabilities.
 // All content display is handled through progress() for consistency.
 type HandlerInteractive interface {
-	Name() string                                   // Identifier for logging: "ChatBot", "ConfigWizard"
-	Label() string                                  // Field label (updates dynamically)
-	Value() string                                  // Current input value
-	Change(newValue string, progress chan<- string) // Handle user input + content display via progress
-	WaitingForUser() bool                           // Should edit mode be auto-activated?
+	Name() string           // Identifier for logging: "ChatBot", "ConfigWizard"
+	Label() string          // Field label (updates dynamically)
+	Value() string          // Current input value
+	Change(newValue string) // Handle user input + content display via log
+	WaitingForUser() bool   // Should edit mode be auto-activated?
 }
 
 // ShortcutProvider defines the optional interface for handlers that provide global shortcuts.
@@ -76,3 +76,15 @@ type Loggable interface {
 	Name() string
 	SetLog(logger func(message ...any))
 }
+
+// StreamingLoggable enables handlers to display ALL log messages
+// instead of the default "last message only" behavior.
+type StreamingLoggable interface {
+	Loggable
+	AlwaysShowAllLogs() bool // Return true to show all messages
+}
+
+const (
+	LogOpen  = "[..." // Start or update same line with auto-animation
+	LogClose = "...]" // Update same line and stop auto-animation
+)

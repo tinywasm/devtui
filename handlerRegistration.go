@@ -150,6 +150,12 @@ func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, tim
 func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 	handlerName := handler.Name()
 
+	// Detect streaming capability
+	showAll := false
+	if streamer, ok := handler.(StreamingLoggable); ok {
+		showAll = streamer.AlwaysShowAllLogs()
+	}
+
 	// Create anyHandler for tracking
 	anyH := &anyHandler{
 		handlerType:  handlerTypeLoggable,
@@ -183,11 +189,45 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 			}
 		}
 
-		// Get message type and content
-		messageStr, msgType := fmt.Translate(msg).StringType()
+		// Handle LogOpen/LogClose prefixes
+		isOpening := false
+		isClosing := false
+		cleanMsg := msg
 
-		// Send to DevTUI with handler tracking
-		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, handlerName, "", color)
+		if len(msg) >= 4 {
+			if msg[:4] == LogOpen {
+				isOpening = true
+				cleanMsg = msg[4:]
+			} else if msg[:4] == LogClose {
+				isClosing = true
+				cleanMsg = msg[4:]
+			}
+		}
+
+		// Get message type and content
+		messageStr, msgType := fmt.Translate(cleanMsg).StringType()
+
+		// Tracking logic:
+		// If streaming (showAll) and not opening/closing -> no trackingID (always new line)
+		// If not streaming -> always use handlerName as trackingID
+		// If opening/closing -> use handlerName as trackingID (grouped)
+		trackingID := ""
+		if !showAll || isOpening || isClosing {
+			trackingID = handlerName
+		}
+
+		// Send to DevTUI
+		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, handlerName, trackingID, color)
+
+		// Handle animation
+		if isOpening {
+			ts.startAnimation(handlerName, messageStr, msgType, color)
+		} else if isClosing {
+			ts.stopAnimation(handlerName)
+		} else if trackingID == "" {
+			// Regular streaming message: stop any pending animation
+			ts.stopAnimation(handlerName)
+		}
 
 		if msgType == fmt.Msg.Error {
 			ts.tui.Logger(msg)

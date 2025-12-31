@@ -12,6 +12,7 @@ type SimpleChatHandler struct {
 	CurrentInput       string
 	WaitingForUserFlag bool
 	IsProcessing       bool
+	log                func(message ...any)
 }
 
 // NewSimpleChatHandler creates a new thread-safe chat handler
@@ -55,7 +56,13 @@ func (h *SimpleChatHandler) WaitingForUser() bool {
 	return h.WaitingForUserFlag && !h.IsProcessing
 }
 
-func (h *SimpleChatHandler) Change(newValue string, progress chan<- string) {
+func (h *SimpleChatHandler) SetLog(f func(message ...any)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.log = f
+}
+
+func (h *SimpleChatHandler) Change(newValue string) {
 	// Display content when field selected
 	if newValue == "" && !h.getWaitingForUserFlag() && !h.getIsProcessing() {
 		h.mu.RLock()
@@ -64,14 +71,16 @@ func (h *SimpleChatHandler) Change(newValue string, progress chan<- string) {
 		copy(messages, h.Messages)
 		h.mu.RUnlock()
 
-		if messagesCount == 0 {
-			progress <- "Welcome"
-		} else {
-			for _, msg := range messages {
-				if msg.IsUser {
-					progress <- "U: " + msg.Text
-				} else {
-					progress <- "A: " + msg.Text
+		if h.log != nil {
+			if messagesCount == 0 {
+				h.log("Welcome")
+			} else {
+				for _, msg := range messages {
+					if msg.IsUser {
+						h.log("U: " + msg.Text)
+					} else {
+						h.log("A: " + msg.Text)
+					}
 				}
 			}
 		}
@@ -94,21 +103,25 @@ func (h *SimpleChatHandler) Change(newValue string, progress chan<- string) {
 		h.CurrentInput = ""
 		h.mu.Unlock()
 
-		progress <- "U: " + userMsg
-		progress <- "Processing..."
+		if h.log != nil {
+			h.log("U: " + userMsg)
+			h.log("Processing...")
+		}
 
-		h.generateAIResponse(userMsg, progress)
+		h.generateAIResponse(userMsg)
 		return
 	}
 
 	// Empty input while waiting
 	if newValue == "" && h.getWaitingForUserFlag() && !h.getIsProcessing() {
-		progress <- "Type message"
+		if h.log != nil {
+			h.log("Type message")
+		}
 		return
 	}
 }
 
-func (h *SimpleChatHandler) generateAIResponse(userMessage string, progress chan<- string) {
+func (h *SimpleChatHandler) generateAIResponse(userMessage string) {
 	time.Sleep(500 * time.Millisecond) // Short delay for testing
 
 	var response string
@@ -134,7 +147,9 @@ func (h *SimpleChatHandler) generateAIResponse(userMessage string, progress chan
 	h.WaitingForUserFlag = true
 	h.mu.Unlock()
 
-	progress <- "A: " + response
+	if h.log != nil {
+		h.log("A: " + response)
+	}
 }
 
 // Thread-safe helper methods

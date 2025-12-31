@@ -1,12 +1,13 @@
 package devtui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/tinywasm/devtui/example"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/tinywasm/devtui/example"
 )
 
 // TestChatHandlerRealScenario tests the complete chat interaction flow
@@ -19,12 +20,13 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		chatHandler := &example.SimpleChatHandler{}
 
 		var contentDisplayed []string
-		mockProgress := func(progress <-chan string) {
-			for msg := range progress {
+		chatHandler.SetLog(func(message ...any) {
+			if len(message) > 0 {
+				msg := fmt.Sprint(message[0])
 				contentDisplayed = append(contentDisplayed, msg)
 				t.Logf("Progress: %s", msg)
 			}
-		}
+		})
 
 		// STATE 1: Initial content display (when DevTUI selects the field)
 		t.Logf("State 1: DevTUI selects field -> handler shows content")
@@ -34,13 +36,8 @@ func TestChatHandlerRealScenario(t *testing.T) {
 			t.Errorf("Initial state: should not be waiting for user")
 		}
 
-		// DevTUI calls Change("", progress) when field is selected
-		progressChan := make(chan string, 10)
-		go func() {
-			defer close(progressChan)
-			chatHandler.Change("", progressChan)
-		}()
-		mockProgress(progressChan)
+		// DevTUI calls Change("") when field is selected
+		chatHandler.Change("")
 
 		// Verify welcome content was shown
 		if len(contentDisplayed) == 0 {
@@ -77,16 +74,12 @@ func TestChatHandlerRealScenario(t *testing.T) {
 			t.Errorf("Expected input mode label, got: %s", chatHandler.Label())
 		}
 
-		// STATE 3: User types and sends message (handler processes business logic)
+		// STATE 3: User sends message -> handler processes it
 		t.Logf("State 3: User sends message -> handler processes it")
 
 		userMessage := "Hello, how are you?"
-		progressChan2 := make(chan string, 10)
-		go func() {
-			defer close(progressChan2)
-			chatHandler.Change(userMessage, progressChan2)
-		}()
-		mockProgress(progressChan2)
+		contentDisplayed = []string{}
+		chatHandler.Change(userMessage)
 
 		// Note: We cannot safely check handler state immediately after sending
 		// as the async operation may not have started yet. The handler's business logic
@@ -138,20 +131,15 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		// as it would create race conditions. The handler manages its own state
 		// and DevTUI respects that encapsulation.
 
-		// STATE 5: DevTUI re-selects field -> handler shows conversation history
+		// STATE 5: DevTUI re-selects field -> handler shows history
 		t.Logf("State 5: DevTUI re-selects field -> handler shows history")
 
 		// Simulate DevTUI deactivating input mode (field loses focus, regains focus)
 		chatHandler.WaitingForUserFlag = false
 		contentDisplayed = []string{}
 
-		// DevTUI calls Change("", progress) when field is re-selected
-		progressChan3 := make(chan string, 10)
-		go func() {
-			defer close(progressChan3)
-			chatHandler.Change("", progressChan3)
-		}()
-		mockProgress(progressChan3)
+		// DevTUI calls Change("") when field is re-selected
+		chatHandler.Change("")
 
 		// Verify conversation history is shown (handler's business logic)
 		historyFound := false
@@ -172,12 +160,7 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		contentDisplayed = []string{}
 
 		// User presses Enter without typing anything
-		progressChan4 := make(chan string, 10)
-		go func() {
-			defer close(progressChan4)
-			chatHandler.Change("", progressChan4)
-		}()
-		mockProgress(progressChan4)
+		chatHandler.Change("")
 
 		// Handler should guide the user (handler's responsibility for UX)
 		guidanceFound := false

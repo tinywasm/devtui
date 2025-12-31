@@ -246,8 +246,8 @@ func (h *DevTUI) checkAndTriggerInteractiveContent() {
 
 	activeField := fieldHandlers[activeTab.indexActiveEditField]
 	if activeField != nil && activeField.isInteractiveHandler() && !h.editModeActivated {
-		// Trigger content display for interactive handlers when field is selected
-		activeField.triggerContentDisplay()
+		// Automatic content display for interactive handlers - messages flow through h.log()
+		activeField.handler.Change("")
 	}
 }
 
@@ -282,19 +282,9 @@ func (h *DevTUI) executeShortcut(entry *ShortcutEntry) (bool, tea.Cmd) {
 
 	// Execute the Change method with shortcut value
 	if targetField.handler != nil {
-		progressChan := make(chan string, 10)
-		done := make(chan struct{})
-		go func() {
-			for msg := range progressChan {
-				targetField.sendMessage(msg)
-			}
-			close(done)
-		}()
-		go func() {
-			targetField.handler.Change(entry.Value, progressChan)
-			close(progressChan)
-		}()
-		<-done
+		// Use Change() without channel - messages flow through h.log()
+		// Execute synchronously to ensure deterministic behavior for shortcuts
+		targetField.handler.Change(entry.Value)
 	}
 
 	// Update viewport to show changes

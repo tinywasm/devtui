@@ -71,10 +71,8 @@ func TestFieldHandler_ErrorHandling(t *testing.T) {
 	// Test error handling using centralized error handler
 	handler := NewTestErrorHandler("Error Field", "test")
 
-	// The new API does not return errors, so just call Change with a no-op progress function
-	progressChan := make(chan string, 1)
-	go func() { <-progressChan }() // consume the message
-	handler.Change("any value", progressChan)
+	// The new API does not return errors, so just call Change
+	handler.Change("any value")
 	// No error to check; if the handler panics or misbehaves, the test will fail
 }
 
@@ -123,9 +121,7 @@ func TestFieldHandler_EditableFields(t *testing.T) {
 	if !editableHandler.editable() {
 		t.Error("Handler should be editable")
 	}
-	progressChan := make(chan string, 1)
-	go func() { <-progressChan }()
-	editableHandler.Change("new value", progressChan)
+	editableHandler.Change("new value")
 
 	if editableHandler.Value() != "new value" {
 		t.Errorf("Expected value 'new value', got '%s'", editableHandler.Value())
@@ -134,9 +130,7 @@ func TestFieldHandler_EditableFields(t *testing.T) {
 	// Test non-editable field (button) - now using execution handler
 
 	originalValue := nonEditableHandler.Value()
-	progressChan2 := make(chan string, 1)
-	go func() { <-progressChan2 }()
-	nonEditableHandler.Change("attempted change", progressChan2)
+	nonEditableHandler.Change("attempted change")
 
 	if nonEditableHandler.Value() != originalValue {
 		t.Error("Non-editable field value should not change")
@@ -178,15 +172,10 @@ func TestAsyncState_Management(t *testing.T) {
 func BenchmarkFieldHandler_SimpleOperation(b *testing.B) {
 	// Use centralized handler from handler_test.go
 	handler := NewTestEditableHandler("Benchmark Field", "test")
-	progressChan := make(chan string, 1)
-	go func() {
-		for range progressChan {
-		}
-	}()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		handler.Change(fmt.Sprintf("value-%d", i), progressChan)
+		handler.Change(fmt.Sprintf("value-%d", i))
 	}
 }
 
@@ -207,15 +196,10 @@ func BenchmarkFieldHandler_MultipleFields(b *testing.B) {
 	}
 	ts := tui.TabSections[GetFirstTestTabIndex()]
 
-	progressChan := make(chan string, 1)
-	go func() {
-		for range progressChan {
-		}
-	}()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for j, field := range ts.fieldHandlers {
-			field.handler.Change(fmt.Sprintf("benchmark-value-%d-%d", i, j), progressChan)
+			field.handler.Change(fmt.Sprintf("benchmark-value-%d-%d", i, j))
 		}
 	}
 }

@@ -38,3 +38,12 @@ func (t *DevTUI) ReturnFocus() error {
 	}
 
 }
+
+// GetTabSections returns all tab sections as a slice of any for interface compatibility
+func (t *DevTUI) GetTabSections() []any {
+	result := make([]any, len(t.TabSections))
+	for i, section := range t.TabSections {
+		result[i] = section
+	}
+	return result
+}

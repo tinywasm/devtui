@@ -26,6 +26,7 @@ type TestEditableHandler struct {
 	currentValue string
 	lastOpID     string
 	updateMode   bool // Para controlar si actualiza mensajes existentes
+	log          func(message ...any)
 }
 
 func NewTestEditableHandler(label, value string) *TestEditableHandler {
@@ -46,13 +47,19 @@ func (h *TestEditableHandler) Value() string {
 func (h *TestEditableHandler) editable() bool         { return true }
 func (h *TestEditableHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestEditableHandler) Change(newValue string, progress chan<- string) {
+func (h *TestEditableHandler) Change(newValue string) {
 	h.mu.Lock()
 	h.currentValue = newValue
 	h.mu.Unlock()
-	if progress != nil {
-		progress <- "Saved: " + newValue
+	if h.log != nil {
+		h.log("Saved: " + newValue)
 	}
+}
+
+func (h *TestEditableHandler) SetLog(f func(message ...any)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.log = f
 }
 
 // MessageTracker methods
@@ -87,6 +94,7 @@ type TestNonEditableHandler struct {
 	actionText string
 	lastOpID   string
 	updateMode bool
+	log        func(message ...any)
 }
 
 func NewTestNonEditableHandler(label, actionText string) *TestNonEditableHandler {
@@ -106,17 +114,23 @@ func (h *TestNonEditableHandler) Value() string {
 
 func (h *TestNonEditableHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestNonEditableHandler) Change(newValue string, progress chan<- string) {
-	if progress != nil {
-		progress <- "Action executed: " + h.actionText
+func (h *TestNonEditableHandler) Change(newValue string) {
+	if h.log != nil {
+		h.log("Action executed: " + h.actionText)
 	}
 }
 
 // HandlerExecution interface
-func (h *TestNonEditableHandler) Execute(progress chan<- string) {
-	if progress != nil {
-		progress <- "Action executed: " + h.actionText
+func (h *TestNonEditableHandler) Execute() {
+	if h.log != nil {
+		h.log("Action executed: " + h.actionText)
 	}
+}
+
+func (h *TestNonEditableHandler) SetLog(f func(message ...any)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.log = f
 }
 
 // Name returns the name of the handler.
@@ -189,6 +203,7 @@ type PortTestHandler struct {
 	currentPort string
 	lastOpID    string
 	updateMode  bool
+	log         func(message ...any)
 }
 
 func NewPortTestHandler(initialPort string) *PortTestHandler {
@@ -206,33 +221,39 @@ func (h *PortTestHandler) Value() string {
 func (h *PortTestHandler) Editable() bool         { return true }
 func (h *PortTestHandler) Timeout() time.Duration { return 3 * time.Second }
 
-func (h *PortTestHandler) Change(newValue string, progress chan<- string) {
+func (h *PortTestHandler) Change(newValue string) {
 	portStr := strings.TrimSpace(newValue)
 	if portStr == "" {
-		if progress != nil {
-			progress <- "port cannot be empty"
+		if h.log != nil {
+			h.log("port cannot be empty")
 		}
 		return
 	}
 	port, err := strconv.Atoi(portStr)
 	if err != nil {
-		if progress != nil {
-			progress <- "port must be a number"
+		if h.log != nil {
+			h.log("port must be a number")
 		}
 		return
 	}
 	if port < 1 || port > 65535 {
-		if progress != nil {
-			progress <- "port must be between 1 and 65535"
+		if h.log != nil {
+			h.log("port must be between 1 and 65535")
 		}
 		return
 	}
 	h.mu.Lock()
 	h.currentPort = portStr
 	h.mu.Unlock()
-	if progress != nil {
-		progress <- "Port configured: " + strconv.Itoa(port)
+	if h.log != nil {
+		h.log("Port configured: " + strconv.Itoa(port))
 	}
+}
+
+func (h *PortTestHandler) SetLog(f func(message ...any)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.log = f
 }
 
 // MessageTracker methods
@@ -266,6 +287,7 @@ type TestErrorHandler struct {
 	value      string
 	lastOpID   string
 	updateMode bool
+	log        func(message ...any)
 }
 
 func NewTestErrorHandler(label, value string) *TestErrorHandler {
@@ -280,10 +302,14 @@ func (h *TestErrorHandler) Value() string          { return h.value }
 func (h *TestErrorHandler) Editable() bool         { return true }
 func (h *TestErrorHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestErrorHandler) Change(newValue string, progress chan<- string) {
-	if progress != nil {
-		progress <- "simulated error occurred"
+func (h *TestErrorHandler) Change(newValue string) {
+	if h.log != nil {
+		h.log("simulated error occurred")
 	}
+}
+
+func (h *TestErrorHandler) SetLog(f func(message ...any)) {
+	h.log = f
 }
 
 // MessageTracker methods
@@ -307,6 +333,7 @@ type TestRequiredFieldHandler struct {
 	currentValue string
 	lastOpID     string
 	updateMode   bool
+	log          func(message ...any)
 }
 
 func NewTestRequiredFieldHandler(label, initialValue string) *TestRequiredFieldHandler {
@@ -321,17 +348,21 @@ func (h *TestRequiredFieldHandler) Value() string          { return h.currentVal
 func (h *TestRequiredFieldHandler) Editable() bool         { return true }
 func (h *TestRequiredFieldHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestRequiredFieldHandler) Change(newValue string, progress chan<- string) {
+func (h *TestRequiredFieldHandler) Change(newValue string) {
 	if newValue == "" {
-		if progress != nil {
-			progress <- "Field cannot be empty"
+		if h.log != nil {
+			h.log("Field cannot be empty")
 		}
 		return
 	}
 	h.currentValue = newValue
-	if progress != nil {
-		progress <- "Accepted: " + newValue
+	if h.log != nil {
+		h.log("Accepted: " + newValue)
 	}
+}
+
+func (h *TestRequiredFieldHandler) SetLog(f func(message ...any)) {
+	h.log = f
 }
 
 // MessageTracker methods
@@ -355,6 +386,7 @@ type TestOptionalFieldHandler struct {
 	currentValue string
 	lastOpID     string
 	updateMode   bool
+	log          func(message ...any)
 }
 
 func NewTestOptionalFieldHandler(label, initialValue string) *TestOptionalFieldHandler {
@@ -369,18 +401,22 @@ func (h *TestOptionalFieldHandler) Value() string          { return h.currentVal
 func (h *TestOptionalFieldHandler) Editable() bool         { return true }
 func (h *TestOptionalFieldHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestOptionalFieldHandler) Change(newValue string, progress chan<- string) {
+func (h *TestOptionalFieldHandler) Change(newValue string) {
 	h.currentValue = newValue
 	if newValue == "" {
 		h.currentValue = "Default Value" // Para el test que espera esta transformación
-		if progress != nil {
-			progress <- "Default Value"
+		if h.log != nil {
+			h.log("Default Value")
 		}
 	} else {
-		if progress != nil {
-			progress <- "Updated: " + newValue
+		if h.log != nil {
+			h.log("Updated: " + newValue)
 		}
 	}
+}
+
+func (h *TestOptionalFieldHandler) SetLog(f func(message ...any)) {
+	h.log = f
 }
 
 // MessageTracker methods
@@ -404,6 +440,7 @@ type TestClearableFieldHandler struct {
 	currentValue string
 	lastOpID     string
 	updateMode   bool
+	log          func(message ...any)
 }
 
 func NewTestClearableFieldHandler(label, initialValue string) *TestClearableFieldHandler {
@@ -418,11 +455,15 @@ func (h *TestClearableFieldHandler) Value() string          { return h.currentVa
 func (h *TestClearableFieldHandler) Editable() bool         { return true }
 func (h *TestClearableFieldHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestClearableFieldHandler) Change(newValue string, progress chan<- string) {
+func (h *TestClearableFieldHandler) Change(newValue string) {
 	h.currentValue = newValue
-	if progress != nil {
-		progress <- newValue
+	if h.log != nil {
+		h.log(newValue)
 	}
+}
+
+func (h *TestClearableFieldHandler) SetLog(f func(message ...any)) {
+	h.log = f
 }
 
 // MessageTracker methods
@@ -447,6 +488,7 @@ type TestCapturingHandler struct {
 	capturedValue *string // Puntero para capturar valores en tests
 	lastOpID      string
 	updateMode    bool
+	log           func(message ...any)
 }
 
 func NewTestCapturingHandler(label, initialValue string, capturedValue *string) *TestCapturingHandler {
@@ -462,7 +504,7 @@ func (h *TestCapturingHandler) Value() string          { return h.currentValue }
 func (h *TestCapturingHandler) Editable() bool         { return true }
 func (h *TestCapturingHandler) Timeout() time.Duration { return 0 }
 
-func (h *TestCapturingHandler) Change(newValue string, progress chan<- string) {
+func (h *TestCapturingHandler) Change(newValue string) {
 	if h.capturedValue != nil {
 		*h.capturedValue = newValue // Captura el valor para el test
 	}
@@ -471,6 +513,10 @@ func (h *TestCapturingHandler) Change(newValue string, progress chan<- string) {
 		return
 	}
 	h.currentValue = newValue
+}
+
+func (h *TestCapturingHandler) SetLog(f func(message ...any)) {
+	h.log = f
 }
 
 // MessageTracker methods
