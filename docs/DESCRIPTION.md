@@ -46,10 +46,11 @@ DevTUI's logging system is unique:
 
 ## Progress System
 
-For long-running operations, handlers receive a `chan<- string` (progress channel).
--   Send simple strings to update the status.
--   DevTUI manages the channel lifecycle.
--   Status updates appear instantly in the UI.
+For long-running operations, handlers should implement the `Loggable` interface.
+-   DevTUI provides a `log` function via `SetLog`.
+-   Handlers call this function to report progress.
+-   The UI updates automatically to show the latest status.
+-   This replaces the previous channel-based progress system.
 
 ## Keyboard Shortcuts
 

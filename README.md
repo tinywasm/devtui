@@ -7,7 +7,7 @@ Reusable **message presentation system** for Go development tools. DevTUI is a p
 
 **Decoupled Design**: DevTUI follows consumer-driven interface design - your application defines UI interfaces, DevTUI implements them. This enables zero coupling, easy testing, and pluggable UI implementations.
 
-**What DevTUI does**: Takes messages from your handlers via a `progress` channel or an internal `log()` function and displays them in a clean, organized terminal interface with tabs, navigation, and automatic formatting.
+**What DevTUI does**: Takes messages from your handlers via an internal `log()` function and displays them in a clean, organized terminal interface with tabs, navigation, and automatic formatting.
 
 **Unified Architecture**: DevTUI uses a single entry point (`AddHandler`) for all types of content. Handlers can optionally implement the `Loggable` interface to receive a logger from DevTUI, enabling automatic message tracking and a clean "last log only" display.
 
@@ -31,11 +31,9 @@ type LanguageHandler struct {
 func (h *LanguageHandler) Name() string  { return "Language" }
 func (h *LanguageHandler) Label() string { return "Language" }
 func (h *LanguageHandler) Value() string { return h.lang }
-func (h *LanguageHandler) Change(newValue string, progress chan<- string) {
+func (h *LanguageHandler) Change(newValue string) {
     h.lang = newValue
-    // Send a single human-readable status message. The caller owns the
-    // channel lifecycle (do NOT close it from here).
-    progress <- "Language changed to " + newValue // Will only refresh, not create a message
+    // No logging needed here if we only want to update the value
 }
 func (h *LanguageHandler) Content() string {
     return "Current language: " + h.lang
@@ -57,7 +55,7 @@ type BackupHandler struct {
 func (h *BackupHandler) Name() string                     { return "SystemBackup" }
 func (h *BackupHandler) Label() string                    { return "Create System Backup" }
 func (h *BackupHandler) SetLog(f func(message ...any))    { h.log = f }
-func (h *BackupHandler) Execute(progress chan<- string) {
+func (h *BackupHandler) Execute() {
     h.log("Preparing backup...")
     time.Sleep(200 * time.Millisecond)
     h.log("Backing up database...")
@@ -103,15 +101,10 @@ type HandlerDisplay interface {
 ### 2. HandlerEdit - Interactive Input Fields (4 methods)  
 ```go
 type HandlerEdit interface {
-    Name() string    // Unique identifier for logging
-    Label() string   // Field label
-    Value() string   // Current/initial value
-    // Change receives a progress channel for status updates. Implementations
-    // should send human-readable messages to the channel (e.g. "validating...",
-    // "saving...", "done"). The caller manages the channel lifecycle and will
-    // close it; implementations MUST NOT close the channel. Avoid blocking
-    // indefinitely when sending (the channel may be unbuffered).
-    Change(newValue string, progress chan<- string)
+    Name() string           // Identifier for logging: "ServerPort", "DatabaseURL"
+    Label() string          // Field label (e.g., "Server Port", "Host Configuration")
+    Value() string          // Current/initial value (e.g., "8080", "localhost")
+    Change(newValue string) // Handle user input + content display via log
 }
 ```
 
@@ -121,8 +114,8 @@ type HandlerEdit interface {
 // Shortcuts work from any tab and automatically navigate to this field
 func (h *DatabaseHandler) Shortcuts() []map[string]string {
     return []map[string]string{
-        {"t": "test connection"}, // Pressing 't' calls Change("t", progress)
-        {"b": "backup database"}, // Pressing 'b' calls Change("b", progress)
+        {"t": "test connection"}, // Pressing 't' calls Change("t")
+        {"b": "backup database"}, // Pressing 'b' calls Change("b")
     }
 }
 ```
@@ -132,13 +125,9 @@ func (h *DatabaseHandler) Shortcuts() []map[string]string {
 ### 3. HandlerExecution - Action Buttons (3 methods)
 ```go
 type HandlerExecution interface {
-    Name() string  // Unique identifier for logging
-    Label() string // Button label
-    // Execute runs the action and can send progress updates via the provided
-    // channel. Do not close the channel from the implementation; the caller
-    // owns the lifecycle. Avoid blocking sends on the channel to prevent UI
-    // deadlocks.
-    Execute(progress chan<- string)
+    Name() string  // Identifier for logging: "DeployProd", "BuildProject"
+    Label() string // Button label (e.g., "Deploy to Production", "Build Project")
+    Execute()      // Execute action + content display via log
 }
 ```
 **[→ See complete implementation example](example/HandlerExecution.go)**
@@ -146,19 +135,16 @@ type HandlerExecution interface {
 ### 4. HandlerInteractive - Interactive Content Management (5 methods)
 ```go
 type HandlerInteractive interface {
-    Name() string                                       // Identifier for logging
-    Label() string                                      // Field label (updates dynamically)
-    Value() string                                      // Current input value
-    // Change receives a progress channel for streaming content and status
-    // updates. Implementations should not close the channel and should avoid
-    // blocking sends.
-    Change(newValue string, progress chan<- string) // Handle user input + content display
-    WaitingForUser() bool                               // Should edit mode be auto-activated?
+    Name() string           // Identifier for logging: "ChatBot", "ConfigWizard"
+    Label() string          // Field label (updates dynamically)
+    Value() string          // Current input value
+    Change(newValue string) // Handle user input + content display via log
+    WaitingForUser() bool   // Should edit mode be auto-activated?
 }
 ```
 
 **Key Features:**
-- **Dynamic Content**: All content updates through `progress()` for consistency
+- **Dynamic Content**: All content updates through `log()` for consistency
 - **Auto Edit Mode**: `WaitingForUser()` controls when edit mode is activated
 - **Content Display**: Use empty `newValue` + `WaitingForUser() == false` to trigger content display
 - **Perfect for**: Chat interfaces, configuration wizards, interactive help systems
@@ -216,25 +202,18 @@ DevTUI implements a **clean terminal policy**. By default:
 - **Universal Registration**: Single `AddHandler()` method for all handler types
 - **Loggable Interface**: Automatic logging with `SetLog` and name-based tracking
 - **Clean Terminal Display**: Only the most recent log per handler is shown by default
-- **Progress Callbacks**: Real-time feedback for long-running operations
+- **Progress Callbacks**: Real-time feedback via `Loggable` interface
 - **Decoupled Architecture**: Consumers define their own interfaces - DevTUI implements them
 - **Thread-Safe**: Concurrent handler registration and execution
 
-**Progress callbacks (channel contract)**
+**Logging and Progress**
 
-DevTUI provides a `progress` channel to handlers for streaming human-readable
-status messages. A small contract to keep in mind:
+DevTUI provides a powerful logging system through the `Loggable` interface. Handlers that implement `Loggable` receive a `log` function via `SetLog`.
 
-- The `progress` parameter has type `chan<- string` on handler methods.
-- The caller (DevTUI) owns the channel lifecycle and will close it when the
-    operation is finished. Handler implementations MUST NOT close the channel.
-- Handlers may send zero or more messages. Messages should be plain strings
-    intended for display to users (for example: "validating...", "step 2 done",
-    or "error: <message>").
-- To avoid deadlocks, avoid blocking sends on the channel. If a send may
-    block (for example when the channel is unbuffered and the UI may be busy),
-    send from a goroutine or use a non-blocking select with a default case.
-- MessageTracker functionality is now built-in for all `Loggable` handlers.
+- **Automatic Tracking**: Messages are automatically associated with the handler's `Name()`.
+- **Clean Display**: Only the most recent message is shown in the terminal.
+- **Streaming Support**: Handlers can implement `StreamingLoggable` to show all messages instead of just the last one.
+- **Grouping**: Use `devtui.LogOpen` ("[...") and `devtui.LogClose` ("...]") to group related operations with animations.
 
 ## Decoupled Architecture
 
@@ -275,7 +254,7 @@ consumer.Start(ui) // Pass UI as interface
 
 **Shortcut System**: Handlers implementing `Shortcuts() []map[string]string` automatically register global keyboard shortcuts in the order returned by the slice. When pressed, shortcuts navigate to the handler's tab/field and execute the `Change()` method with the shortcut key as the `newValue` parameter.
 
-**Example**: If shortcuts return `[]map[string]string{{"t":"test connection"}}`, pressing 't' calls `Change("t", progress)`.
+**Example**: If shortcuts return `[]map[string]string{{"t":"test connection"}}`, pressing 't' calls `Change("t")`.
 
 
 **Note**: DevTUI automatically loads a built-in [ShortcutsHandler](shortcuts.go) at position 0 in the first tab, which displays detailed keyboard navigation commands. This handler demonstrates the `HandlerEdit` interface and provides interactive help within the application.
