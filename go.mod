@@ -4,8 +4,8 @@ go 1.25.2
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/tinywasm/fmt v0.12.5
-	github.com/tinywasm/time v0.2.10
+	github.com/tinywasm/fmt v0.14.0
+	github.com/tinywasm/time v0.2.11
 )
 
 require (

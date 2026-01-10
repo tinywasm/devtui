@@ -154,6 +154,43 @@ func (t *DevTUI) NewTabSection(title, description string) any {
 	return tab
 }
 
+// RemoveTabSection removes a tab section from the TUI.
+// The section parameter must have been previously returned by NewTabSection.
+func (t *DevTUI) RemoveTabSection(section any) {
+	tab, ok := section.(*tabSection)
+	if !ok || tab == nil {
+		return
+	}
+
+	// Find and remove the section from TabSections
+	for i, ts := range t.TabSections {
+		if ts == tab {
+			// Stop any animations for handlers in this section
+			for handlerName := range tab.animationStopChans {
+				tab.stopAnimation(handlerName)
+			}
+
+			// Remove from slice
+			t.TabSections = append(t.TabSections[:i], t.TabSections[i+1:]...)
+
+			// Re-index remaining sections
+			for j := i; j < len(t.TabSections); j++ {
+				t.TabSections[j].index = j
+			}
+
+			// Adjust activeTab if necessary
+			if t.activeTab >= len(t.TabSections) && len(t.TabSections) > 0 {
+				t.activeTab = len(t.TabSections) - 1
+			}
+
+			// Refresh UI to reflect changes immediately
+			t.RefreshUI()
+
+			return
+		}
+	}
+}
+
 // setActiveEditField sets the active edit field index
 func (ts *tabSection) setActiveEditField(idx int) {
 	ts.indexActiveEditField = idx

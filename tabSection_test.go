@@ -52,6 +52,48 @@ func TestTabSectionWriter(t *testing.T) {
 	}
 }
 
+func TestRemoveTabSection(t *testing.T) {
+	config := &TuiConfig{
+		ExitChan: make(chan bool),
+		Color:    &ColorPalette{},
+		Logger:   func(messages ...any) {},
+	}
+
+	tui := NewTUI(config)
+	tui.SetTestMode(true)
+
+	initialCount := len(tui.TabSections) // SHORTCUTS tab is always present
+
+	// Create sections
+	tab1 := tui.NewTabSection("TAB1", "First section")
+	tab2 := tui.NewTabSection("TAB2", "Second section")
+
+	if len(tui.TabSections) != initialCount+2 {
+		t.Fatalf("Expected %d sections, got %d", initialCount+2, len(tui.TabSections))
+	}
+
+	// Remove first added section
+	tui.RemoveTabSection(tab1)
+
+	if len(tui.TabSections) != initialCount+1 {
+		t.Fatalf("Expected %d sections after removal, got %d", initialCount+1, len(tui.TabSections))
+	}
+
+	// Verify tab2 is still present with correct index (should be initialCount since TAB1 was initialCount)
+	// SHORTCUTS is index 0. TAB1 was index 1. TAB2 was index 2.
+	// After removing TAB1, TAB2 should become index 1.
+	tab2Section := tab2.(*tabSection)
+	if tab2Section.index != initialCount {
+		t.Errorf("Expected tab2 index to be %d, got %d", initialCount, tab2Section.index)
+	}
+
+	// Remove with nil should not panic
+	tui.RemoveTabSection(nil)
+
+	// Remove with wrong type should not panic
+	tui.RemoveTabSection("not a section")
+}
+
 func TestTabContentsIncrementWhenSendingMessages(t *testing.T) {
 
 	config := &TuiConfig{
