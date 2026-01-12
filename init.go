@@ -164,12 +164,7 @@ func (h *DevTUI) Start(args ...any) {
 		}
 	}
 
-	// Start with tab 1 (skip SHORTCUTS which is at index 0) if there are multiple tabs
-	if len(h.TabSections) > 1 {
-		h.activeTab = 1
-	}
-
-	// NEW: Trigger initial content display for interactive handlers after setting initial tab
+	// NEW: Trigger initial content display for interactive handlers
 	h.checkAndTriggerInteractiveContent()
 
 	if _, err := h.tea.Run(); err != nil {
