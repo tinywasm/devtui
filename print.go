@@ -13,7 +13,14 @@ func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSecti
 	_, newContent := tabSection.updateOrAddContentWithHandler(mt, content, handlerName, trackingID, handlerColor)
 
 	// Always send to channel to trigger UI update
-	d.tabContentsChan <- newContent
+	// prevent deadlock if channel is full
+	select {
+	case d.tabContentsChan <- newContent:
+	default:
+		// channel is full, drop message or handle gracefully
+		// maybe trigger a RefreshUI signal instead if possible?
+		// for now just don't block
+	}
 }
 
 // formatMessage formatea un mensaje según su tipo

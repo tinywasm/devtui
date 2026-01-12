@@ -91,6 +91,9 @@ func (t *tabSection) addNewContent(msgType MessageType, content string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.tabContents = append(t.tabContents, t.tui.createTabContent(content, msgType, t, "", "", ""))
+	if len(t.tabContents) > 500 {
+		t.tabContents = t.tabContents[len(t.tabContents)-500:]
+	}
 }
 
 // NEW: updateOrAddContentWithHandler updates existing content by handler name (trackingID)
@@ -129,6 +132,12 @@ func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content 
 	// If not found or no trackingID, add new content
 	newContent = t.tui.createTabContent(content, msgType, t, handlerName, trackingID, handlerColor)
 	t.tabContents = append(t.tabContents, newContent)
+
+	// Keep only last 500 messages to prevent memory issues and slow rendering
+	if len(t.tabContents) > 500 {
+		t.tabContents = t.tabContents[len(t.tabContents)-500:]
+	}
+
 	return false, newContent
 }
 

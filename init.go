@@ -110,7 +110,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		TabSections:      []*tabSection{},
 		timeProvider:     timeProvider,
 		activeTab:        0, // Will be adjusted in Start() method
-		tabContentsChan:  make(chan tabContent, 100),
+		tabContentsChan:  make(chan tabContent, 1000),
 		currentTime:      time.Now().Format("15:04:05"),
 		tuiStyle:         newTuiStyle(c.Color),
 		id:               id,                    // Set the ID here

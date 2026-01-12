@@ -130,8 +130,8 @@ func (h *DevTUI) RefreshUI() {
 	}
 
 	// Send a custom message to the tea.Program to trigger a view update
-	// This is thread-safe and non-blocking
-	h.tea.Send(refreshTabMsg{})
+	// This MUST be non-blocking when called from within Update loop to avoid deadlocks
+	go h.tea.Send(refreshTabMsg{})
 }
 
 // refreshTabMsg is an internal message type for triggering tab refreshes
