@@ -220,15 +220,26 @@ func (h *DevTUI) renderFooterInput() string {
 	// Truncar el valor para que no afecte el diseño del footer
 	// Descontar el padding que se aplicará al estilo
 	textWidth := valueWidth - (horizontalPadding * 2)
-	if textWidth < 1 {
-		textWidth = 1
-	}
-	valueText = fmt.Convert(valueText).Truncate(textWidth, 0).String()
 
 	// Mostrar cursor solo si estamos en modo edición y el campo es editable
+	showCursor = false
 	if h.editModeActivated && field.editable() {
 		showCursor = true
 	}
+
+	// Determine text limit to avoid layout shifts (reserve space for cursor)
+	// IMPORTANT: Reserve space ALWAYS when showCursor is true, not just when cursorVisible
+	// This prevents layout shift during cursor blinking
+	textLimit := textWidth
+	if showCursor {
+		textLimit -= 1 // Reserve space for cursor character (visible or invisible)
+	}
+	if textLimit < 1 {
+		textLimit = 1
+	}
+
+	// Truncate the value based on the calculated limit
+	truncated := fmt.Convert(valueText).Truncate(textLimit, 0).String()
 
 	// Definir el estilo para el valor del campo
 	inputValueStyle := lipgloss.NewStyle().
@@ -250,23 +261,31 @@ func (h *DevTUI) renderFooterInput() string {
 
 	// Añadir cursor si corresponde
 	if showCursor {
-		// Asegurar que el cursor está dentro de los límites
-		runes := []rune(field.tempEditValue)
+		// Asegurar que el cursor está dentro de los límites de la cadena truncada
+		runes := []rune(truncated)
 		if field.cursor < 0 {
 			field.cursor = 0
 		}
-		if field.cursor > len(runes) {
-			field.cursor = len(runes)
+		// If cursor is beyond visible/truncated area, we could handle it better,
+		// but for now, let's just make sure it doesn't crash.
+		cursorPos := field.cursor
+		if cursorPos > len(runes) {
+			cursorPos = len(runes)
 		}
 
-		// Insertar el cursor en la posición correcta
-		if field.cursor <= len(runes) {
-			beforeCursor := string(runes[:field.cursor])
-			afterCursor := string(runes[field.cursor:])
+		// Insertar el cursor en la posición correcta dentro de la cadena truncada
+		beforeCursor := string(runes[:cursorPos])
+		afterCursor := string(runes[cursorPos:])
+
+		if h.cursorVisible {
 			valueText = beforeCursor + "▋" + afterCursor
 		} else {
-			valueText = field.tempEditValue + "▋"
+			// When cursor is invisible (blinking off), use a space to maintain consistent width
+			valueText = beforeCursor + " " + afterCursor
 		}
+	} else {
+		// Use the truncated text without cursor
+		valueText = truncated
 	}
 
 	// Renderizar el valor con el estilo adecuado

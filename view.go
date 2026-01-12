@@ -1,8 +1,8 @@
 package devtui
 
 import (
-	. "github.com/tinywasm/fmt"
 	"github.com/charmbracelet/lipgloss"
+	. "github.com/tinywasm/fmt"
 )
 
 func (h *DevTUI) View() string {
@@ -10,7 +10,6 @@ func (h *DevTUI) View() string {
 		return "\n  Initializing..."
 	}
 	return Fmt("%s\n%s\n%s", h.headerView(), h.viewport.View(), h.footerView())
-	// return Fmt("%s\n%s\n%s", h.headerView(), h.ContentView(), h.footerView())
 }
 
 // ContentView renderiza los mensajes para una sección de contenido

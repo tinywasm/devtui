@@ -46,6 +46,18 @@ type DevTUI struct {
 
 	// MCP integration: separate logger for MCP tool execution
 	mcpLogger func(message ...any) // injected by mcpserve via SetLog()
+
+	cursorVisible bool // for blinking effect
+}
+
+// cursorTickMsg is used for blinking the cursor
+type cursorTickMsg time.Time
+
+// cursorTick creates a command that sends a message every 500ms
+func (h *DevTUI) cursorTick() tea.Cmd {
+	return tea.Every(500*time.Millisecond, func(t time.Time) tea.Msg {
+		return cursorTickMsg(t)
+	})
 }
 
 type TuiConfig struct {
@@ -126,6 +138,7 @@ func (h *DevTUI) Init() tea.Cmd {
 		tea.EnterAltScreen,
 		h.listenToMessages(),
 		h.tickEverySecond(),
+		h.cursorTick(), // Start blinking
 	)
 }
 

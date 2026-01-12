@@ -1,31 +1,16 @@
 package devtui
 
 import (
-	"context"
-	"time"
-
 	. "github.com/tinywasm/fmt"
 )
 
-// Internal async state management (not exported)
-type internalAsyncState struct {
-	isRunning  bool
-	trackingID string
-	cancel     context.CancelFunc
-	startTime  time.Time
-}
-
 // Field represents a field in the TUI with a handler-based approach
-// field represents a field in the TUI with async capabilities
 type field struct {
-	// NEW: Handler-based approach with anyHandler (replaces fieldHandler)
+	// Handler-based approach with anyHandler (replaces fieldHandler)
 	handler   *anyHandler // Handles all field behavior
 	parentTab *tabSection // Direct reference to parent for message routing
 
-	// NEW: Internal async state
-	asyncState *internalAsyncState
-
-	// UNCHANGED: Existing internal fields
+	// Internal fields for editing
 	tempEditValue string // use for edit
 	index         int
 	cursor        int // cursor position in text value
@@ -202,152 +187,14 @@ func (f *field) sendMessage(msgs ...any) {
 	f.parentTab.tui.sendMessageWithHandler(message, msgType, f.parentTab, handlerName, trackingID, handlerColor)
 }
 
-// executeAsyncChange executes the handler's Change method asynchronously
-func (f *field) executeAsyncChange(valueToSave any) {
-	if f.handler == nil || f.asyncState == nil {
-		return
-	}
-
-	// In test mode, execute synchronously for predictable test behavior
-	if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.isTestMode() {
-		f.executeChangeSyncWithValue(valueToSave)
-		return
-	}
-
-	// Create internal context with timeout from handler
-	timeout := f.handler.Timeout()
-	var ctx context.Context
-	var cancel context.CancelFunc
-
-	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), timeout)
-	} else {
-		ctx, cancel = context.WithCancel(context.Background())
-	}
-
-	f.asyncState.cancel = cancel
-	f.asyncState.isRunning = true
-
-	// trackingID is now the handlerName for automatic tracking
-	f.asyncState.trackingID = f.handler.Name()
-	f.asyncState.startTime = time.Now()
-
-	// Use the pre-captured value instead of getCurrentValue()
-	currentValue := valueToSave
-
-	// Execute user's Change method with context monitoring
-	resultChan := make(chan struct {
-		result string
-		err    error
-	}, 1)
-
-	go func() {
-		// Ensure panic recovery to prevent crashes
-		defer func() {
-			if r := recover(); r != nil {
-				// Log the panic instead of crashing
-				if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.Logger != nil {
-					f.parentTab.tui.Logger("Internal error in handler goroutine:", r)
-				}
-			}
-		}()
-
-		f.handler.Change(currentValue.(string))
-
-		// Only send result if context wasn't cancelled
-		select {
-		case <-ctx.Done():
-			// Context was cancelled, don't send result
-			return
-		default:
-			result := f.handler.Value() // Obtener valor actualizado
-			resultChan <- struct {
-				result string
-				err    error
-			}{result, nil}
-		}
-	}()
-
-	// Wait for completion or timeout
-	select {
-	case res := <-resultChan:
-		// Operation completed normally
-		f.asyncState.isRunning = false
-
-		if res.err != nil {
-			// Handler decides error message content
-			f.sendMessage(res.err.Error())
-		} else {
-			switch f.handler.handlerType {
-			case handlerTypeEdit:
-				// NEW: If handler has Content() method, only refresh display
-				if f.hasContentMethod() {
-					f.parentTab.tui.updateViewport()
-				} else {
-					f.sendMessage(res.result)
-				}
-			case handlerTypeExecution:
-				// Only send if handler explicitly implements Value()
-				if _, ok := f.handler.origHandler.(interface{ Value() string }); ok {
-					f.sendMessage(res.result)
-				}
-				// Other handler types: do not send success message
-			}
-		}
-
-	case <-ctx.Done():
-		// Operation timed out
-		f.asyncState.isRunning = false
-
-		if ctx.Err() == context.DeadlineExceeded {
-			f.sendMessage(Fmt("Operation timed out after %v", timeout))
-		} else {
-			f.sendMessage("Operation was cancelled")
-		}
-	}
-
-	cancel() // Clean up context
-}
-
-// executeChangeSyncWithValue executes the handler's Change method synchronously with pre-captured value
-func (f *field) executeChangeSyncWithValue(valueToSave any) {
-	if f.handler == nil {
-		return
-	}
-
-	f.handler.Change(valueToSave.(string))
-}
-
-// executeChangeSyncWithTracking executes the handler's Change method synchronously but maintains automatic tracking
-func (f *field) executeChangeSyncWithTracking(valueToSave any) {
-	if f.handler == nil {
-		return
-	}
-
-	// Execute handler - messages flow through h.log()
-	f.handler.Change(valueToSave.(string))
-
-	// Send success message (unless handler has Content() method)
-	if f.parentTab != nil {
-		if f.hasContentMethod() {
-			f.parentTab.tui.updateViewport()
-		} else {
-			handlerName := f.handler.Name()
-			handlerColor := f.handler.handlerColor
-			result := f.handler.Value()
-			_, msgType := Translate(result).StringType()
-			f.parentTab.tui.sendMessageWithHandler(result, msgType, f.parentTab, handlerName, handlerName, handlerColor)
-		}
-	}
-}
-
-// handleEnter triggers async operation when user presses Enter
+// handleEnter executes the handler's Change method synchronously.
+// Logs are already async via tabContentsChan, so no goroutine needed here.
 func (f *field) handleEnter() {
 	if f.handler == nil {
 		return
 	}
 
-	// NEW: Readonly fields don't respond to any keys
+	// Readonly fields don't respond to any keys
 	if f.isDisplayOnly() {
 		return
 	}
@@ -355,12 +202,15 @@ func (f *field) handleEnter() {
 	// Capture the current value BEFORE any state changes
 	valueToSave := f.getCurrentValue()
 
-	// In test mode, execute synchronously without goroutine
-	if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.isTestMode() {
-		f.executeChangeSyncWithValue(valueToSave)
-		return
-	}
+	// Panic recovery for safety
+	defer func() {
+		if r := recover(); r != nil {
+			if f.parentTab != nil && f.parentTab.tui != nil && f.parentTab.tui.Logger != nil {
+				f.parentTab.tui.Logger("Handler panic:", r)
+			}
+		}
+	}()
 
-	// DevTUI handles async internally - user doesn't see this complexity
-	go f.executeAsyncChange(valueToSave)
+	// Execute synchronously - logs flow through tabContentsChan (already async)
+	f.handler.Change(valueToSave.(string))
 }

@@ -41,6 +41,12 @@ type ShortcutProvider interface {
 	Shortcuts() []map[string]string // Returns ordered list of single-entry maps with shortcut->description, preserving registration order
 }
 
+// Cancelable defines the optional interface for handlers that want to be notified when the user cancels.
+// Interactive handlers can implement this to clean up or reset their state when ESC is pressed.
+type Cancelable interface {
+	Cancel() // Called when user presses ESC to exit interactive mode
+}
+
 // Loggable defines optional logging capability for handlers.
 // Handlers implementing this receive a logger function from DevTUI
 // when registered via AddHandler.

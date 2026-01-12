@@ -3,10 +3,10 @@ package devtui
 import (
 	"time"
 
-	. "github.com/tinywasm/fmt"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	. "github.com/tinywasm/fmt"
 )
 
 // listenToMessages crea un comando para escuchar mensajes del canal
@@ -88,6 +88,10 @@ func (h *DevTUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		h.currentTime = time.Now().Format("15:04:05")
 		cmds = append(cmds, h.tickEverySecond())
 
+	case cursorTickMsg: // toggle cursor for blinking effect
+		h.cursorVisible = !h.cursorVisible
+		cmds = append(cmds, h.cursorTick())
+
 	case tea.FocusMsg:
 		h.focused = true
 	case tea.BlurMsg:
@@ -133,11 +137,23 @@ func (h *DevTUI) RefreshUI() {
 // refreshTabMsg is an internal message type for triggering tab refreshes
 type refreshTabMsg struct{}
 
-func (h *DevTUI) editingConfigOpen(open bool, currentField *field, msg string) {
+// editingConfigOpen controls the edit mode state.
+// forceClose: when true, bypasses WaitingForUser() check and always closes edit mode (used by ESC).
+func (h *DevTUI) editingConfigOpen(open bool, currentField *field, msg string, forceClose bool) {
 
 	if open {
 		h.editModeActivated = true
 	} else {
+		// Before closing, check if interactive handler still needs input
+		// UNLESS forceClose is true (ESC was pressed - user explicitly wants to exit)
+		if !forceClose && currentField != nil && currentField.isInteractiveHandler() && currentField.shouldAutoActivateEditMode() {
+			// Handler still wants input (e.g., multi-step wizard)
+			// Keep edit mode active and refresh value
+			h.editModeActivated = true
+			currentField.tempEditValue = currentField.handler.Value()
+			currentField.setCursorAtEnd()
+			return
+		}
 		h.editModeActivated = false
 	}
 

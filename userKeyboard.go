@@ -29,26 +29,39 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 		switch msg.Type {
 		case tea.KeyEnter: // Guardar cambios o ejecutar acción
-			// Verificar si hubo cambios (incluyendo borrar el contenido)
-			if currentField.tempEditValue != currentField.Value() {
+			// For interactive handlers, ALWAYS call Change() - user is confirming the value
+			// For edit handlers, only call Change() if value changed
+			shouldExecute := currentField.isInteractiveHandler() || currentField.tempEditValue != currentField.Value()
+
+			if shouldExecute {
 				if currentField.handler != nil {
-					// Trigger async change operation
 					currentField.handleEnter()
-					h.editingConfigOpen(false, currentField, "")
+					h.editingConfigOpen(false, currentField, "", false) // false = check WaitingForUser
 				}
 			} else {
-				// Si no hubo cambios, solo salimos del modo edición sin mostrar mensajes
-				h.editingConfigOpen(false, currentField, "")
+				// No changes and not interactive, just exit edit mode
+				h.editingConfigOpen(false, currentField, "", false)
 			}
 
-			currentField.tempEditValue = "" // Limpiar el valor temporal
-			h.updateViewport()              // Asegurar que se actualice la vista para mostrar el mensaje
+			// Only clear tempEditValue if edit mode actually closed
+			if !h.editModeActivated {
+				currentField.tempEditValue = ""
+			}
+			h.updateViewport() // Asegurar que se actualice la vista para mostrar el mensaje
 			return false, nil
 
 		case tea.KeyEsc: // Al presionar ESC, descartamos los cambios y salimos del modo edición
 			currentField.tempEditValue = "" // Limpiar el valor temporal
-			h.editingConfigOpen(false, currentField, "")
-			h.updateViewport() // Asegurar que se actualice la vista para mostrar el mensaje
+
+			// Notify handler if it implements Cancelable
+			if currentField.handler != nil && currentField.handler.origHandler != nil {
+				if cancelable, ok := currentField.handler.origHandler.(Cancelable); ok {
+					cancelable.Cancel()
+				}
+			}
+
+			h.editingConfigOpen(false, currentField, "", true) // true = force close, bypass WaitingForUser
+			h.updateViewport()                                 // Asegurar que se actualice la vista para mostrar el mensaje
 			return false, nil
 
 		case tea.KeyLeft: // Mover el cursor a la izquierda dentro del texto
@@ -140,8 +153,8 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 			return false, nil
 
 		case tea.KeyEsc: // Permitir también salir con ESC para campos no editables
-			h.editingConfigOpen(false, currentField, "")
-			h.updateViewport() // Asegurar que se actualice la vista para mostrar el mensaje
+			h.editingConfigOpen(false, currentField, "", true) // true = force close
+			h.updateViewport()                                 // Asegurar que se actualice la vista para mostrar el mensaje
 			return false, nil
 		}
 	}
@@ -207,9 +220,9 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 			} else {
 				// Para campos editables, activar modo de edición explícitamente
 				field.tempEditValue = field.Value()
-				field.cursor = 0 // Asegurarnos de que el cursor comience al principio
+				field.setCursorAtEnd() // Always start cursor at end
 				h.editModeActivated = true
-				h.editingConfigOpen(true, field, "")
+				h.editingConfigOpen(true, field, "", false)
 			}
 			h.updateViewport()
 		}
@@ -245,9 +258,17 @@ func (h *DevTUI) checkAndTriggerInteractiveContent() {
 	}
 
 	activeField := fieldHandlers[activeTab.indexActiveEditField]
-	if activeField != nil && activeField.isInteractiveHandler() && !h.editModeActivated {
-		// Automatic content display for interactive handlers - messages flow through h.log()
-		activeField.handler.Change("")
+	if activeField != nil && activeField.isInteractiveHandler() {
+		// Auto-activate edit mode if handler requested it
+		if !h.editModeActivated && activeField.shouldAutoActivateEditMode() {
+			h.editingConfigOpen(true, activeField, activeField.handler.Value(), false)
+			return
+		}
+
+		// Otherwise just trigger content display (default behavior)
+		if !h.editModeActivated {
+			activeField.handler.Change("")
+		}
 	}
 }
 

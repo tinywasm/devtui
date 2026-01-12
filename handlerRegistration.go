@@ -105,9 +105,8 @@ func (ts *tabSection) addHandler(handler any, timeout time.Duration, color strin
 func (ts *tabSection) registerDisplayHandler(handler HandlerDisplay, color string) {
 	anyH := NewDisplayHandler(handler, color)
 	f := &field{
-		handler:    anyH,
-		parentTab:  ts,
-		asyncState: &internalAsyncState{},
+		handler:   anyH,
+		parentTab: ts,
 	}
 	ts.addFields(f)
 }
@@ -115,9 +114,8 @@ func (ts *tabSection) registerDisplayHandler(handler HandlerDisplay, color strin
 func (ts *tabSection) registerEditHandler(handler HandlerEdit, timeout time.Duration, color string) {
 	anyH := NewEditHandler(handler, timeout, color)
 	f := &field{
-		handler:    anyH,
-		parentTab:  ts,
-		asyncState: &internalAsyncState{},
+		handler:   anyH,
+		parentTab: ts,
 	}
 	ts.addFields(f)
 
@@ -128,9 +126,8 @@ func (ts *tabSection) registerEditHandler(handler HandlerEdit, timeout time.Dura
 func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, timeout time.Duration, color string) {
 	anyH := NewExecutionHandler(handler, timeout, color)
 	f := &field{
-		handler:    anyH,
-		parentTab:  ts,
-		asyncState: &internalAsyncState{},
+		handler:   anyH,
+		parentTab: ts,
 	}
 	ts.addFields(f)
 }
@@ -138,9 +135,8 @@ func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, timeout
 func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, timeout time.Duration, color string) {
 	anyH := NewInteractiveHandler(handler, timeout, color)
 	f := &field{
-		handler:    anyH,
-		parentTab:  ts,
-		asyncState: &internalAsyncState{},
+		handler:   anyH,
+		parentTab: ts,
 	}
 	ts.addFields(f)
 }

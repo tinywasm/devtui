@@ -88,6 +88,9 @@ func TestRenderFooterInput(t *testing.T) {
 		field.setCursorForTest(2) // Cursor en posición "te|st value"
 		field.setTempEditValueForTest("test value")
 
+		// Ensure cursor is visible for this test
+		h.cursorVisible = true
+
 		// Renderizar input
 		result := h.renderFooterInput()
 
