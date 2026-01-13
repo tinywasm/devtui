@@ -184,7 +184,11 @@ func (f *field) sendMessage(msgs ...any) {
 
 	// Convert and send message with automatic type detection
 	message, msgType := Translate(msgs...).StringType()
-	f.parentTab.tui.sendMessageWithHandler(message, msgType, f.parentTab, handlerName, trackingID, handlerColor)
+	hType := handlerTypeLoggable
+	if f.handler != nil {
+		hType = f.handler.handlerType
+	}
+	f.parentTab.tui.sendMessageWithHandler(message, msgType, f.parentTab, handlerName, trackingID, handlerColor, hType)
 }
 
 // handleEnter executes the handler's Change method synchronously.

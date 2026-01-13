@@ -146,6 +146,14 @@ func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, tim
 func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 	nameFunc := handler.Name
 
+	// Detect handler type for specialized formatting
+	hType := handlerTypeLoggable
+	if _, ok := handler.(HandlerInteractive); ok {
+		hType = handlerTypeInteractive
+	} else if _, ok := handler.(HandlerDisplay); ok {
+		hType = handlerTypeDisplay
+	}
+
 	// Detect streaming capability
 	showAll := false
 	if streamer, ok := handler.(StreamingLoggable); ok {
@@ -154,7 +162,7 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 
 	// Create anyHandler for tracking
 	anyH := &anyHandler{
-		handlerType:  handlerTypeLoggable,
+		handlerType:  hType, // Use detected type
 		nameFunc:     handler.Name,
 		handlerColor: color,
 	}
@@ -216,7 +224,7 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 		}
 
 		// Send to DevTUI
-		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, currentName, trackingID, color)
+		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, currentName, trackingID, color, hType)
 
 		// Handle animation
 		if isOpening {

@@ -2,7 +2,7 @@ package devtui
 
 import "github.com/tinywasm/fmt"
 
-const HandlerNameWidth = 8
+const HandlerNameWidth = 15
 
 // padHandlerName pads the handler name to a fixed width, centering it.
 // If the name is longer than width, it truncates it.

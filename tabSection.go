@@ -23,9 +23,10 @@ type tabContent struct {
 	isComplete  bool    // true if async operation completed
 
 	// NEW: Handler identification
-	handlerName    string // Formatted/padded Handler name for display
-	RawHandlerName string // Unformatted raw handler name used for matching/updating
-	handlerColor   string // NEW: Handler-specific color for message formatting
+	handlerName    string      // Formatted/padded Handler name for display
+	RawHandlerName string      // Unformatted raw handler name used for matching/updating
+	handlerColor   string      // NEW: Handler-specific color for message formatting
+	handlerType    handlerType // NEW: Type of handler (Interactive, Display, etc.) for formatting
 }
 
 // tabSection represents a tab section in the TUI with configurable fields and content
@@ -72,7 +73,12 @@ func (hw *handlerWriter) Write(p []byte) (n int, err error) {
 
 		// operationID is now always the handlerName for tracking
 		trackingID := hw.handlerName
-		hw.tabSection.tui.sendMessageWithHandler(message, msgType, hw.tabSection, hw.handlerName, trackingID, handlerColor)
+		var hType handlerType = handlerTypeLoggable
+		if handler := hw.tabSection.getWritingHandler(hw.handlerName); handler != nil {
+			hType = handler.handlerType
+		}
+
+		hw.tabSection.tui.sendMessageWithHandler(message, msgType, hw.tabSection, hw.handlerName, trackingID, handlerColor, hType)
 
 		if msgType == Msg.Error {
 			hw.tabSection.tui.Logger(msg)
@@ -90,7 +96,7 @@ type handlerWriter struct {
 func (t *tabSection) addNewContent(msgType MessageType, content string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.tabContents = append(t.tabContents, t.tui.createTabContent(content, msgType, t, "", "", ""))
+	t.tabContents = append(t.tabContents, t.tui.createTabContent(content, msgType, t, "", "", "", handlerTypeLoggable))
 	if len(t.tabContents) > 500 {
 		t.tabContents = t.tabContents[len(t.tabContents)-500:]
 	}
@@ -98,7 +104,7 @@ func (t *tabSection) addNewContent(msgType MessageType, content string) {
 
 // NEW: updateOrAddContentWithHandler updates existing content by handler name (trackingID)
 // Returns true if content was updated, false if new content was added
-func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content string, handlerName string, trackingID string, handlerColor string) (updated bool, newContent tabContent) {
+func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content string, handlerName string, trackingID string, handlerColor string, hType handlerType) (updated bool, newContent tabContent) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -130,7 +136,7 @@ func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content 
 	}
 
 	// If not found or no trackingID, add new content
-	newContent = t.tui.createTabContent(content, msgType, t, handlerName, trackingID, handlerColor)
+	newContent = t.tui.createTabContent(content, msgType, t, handlerName, trackingID, handlerColor, hType)
 	t.tabContents = append(t.tabContents, newContent)
 
 	// Keep only last 500 messages to prevent memory issues and slow rendering
@@ -234,7 +240,7 @@ func (ts *tabSection) startAnimation(handlerName, baseMessage string, msgType Me
 					dots = ""
 				}
 				// Update the same line (using handlerName as trackingID)
-				ts.tui.sendMessageWithHandler(baseMessage+dots, msgType, ts, handlerName, handlerName, color)
+				ts.tui.sendMessageWithHandler(baseMessage+dots, msgType, ts, handlerName, handlerName, color, handlerTypeLoggable)
 			}
 		}
 	}()

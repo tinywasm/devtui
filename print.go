@@ -8,9 +8,9 @@ import (
 )
 
 // NEW: sendMessageWithHandler sends a message with handler identification
-func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string) {
+func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string, hType handlerType) {
 	// trackingID is now the handlerName for automatic tracking
-	_, newContent := tabSection.updateOrAddContentWithHandler(mt, content, handlerName, trackingID, handlerColor)
+	_, newContent := tabSection.updateOrAddContentWithHandler(mt, content, handlerName, trackingID, handlerColor, hType)
 
 	// Always send to channel to trigger UI update
 	// prevent deadlock if channel is full
@@ -27,7 +27,7 @@ func (d *DevTUI) sendMessageWithHandler(content string, mt MessageType, tabSecti
 // When styled is false, no ANSI escape codes are added (for MCP/LLM output).
 func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 	// Check if message comes from a readonly field handler (HandlerDisplay)
-	if msg.handlerName != "" && t.isReadOnlyHandler(msg.handlerName) {
+	if msg.handlerType == handlerTypeDisplay {
 		// For readonly fields: no timestamp, cleaner visual content, no special coloring
 		return msg.Content
 	}
@@ -50,7 +50,7 @@ func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 	content = Convert(content).PathShort().String()
 
 	// Check if message comes from interactive handler - clean format with timestamp only
-	if msg.handlerName != "" && t.isInteractiveHandler(msg.handlerName) {
+	if msg.handlerType == handlerTypeInteractive {
 		// Interactive handlers: timestamp + content (no handler name for cleaner UX)
 		return Fmt("%s %s", timeStr, content)
 	}
@@ -126,32 +126,8 @@ func (t *DevTUI) formatHandlerName(handlerName string, handlerColor string) stri
 	return styledName + " "
 }
 
-// Helper to detect readonly handlers
-func (t *DevTUI) isReadOnlyHandler(handlerName string) bool {
-	// Check if handler has empty label (readonly convention)
-	for _, tab := range t.TabSections {
-		if handler := tab.getWritingHandler(handlerName); handler != nil {
-			// Check if it's a display handler (readonly)
-			return handler.handlerType == handlerTypeDisplay
-		}
-	}
-	return false
-}
-
-// NEW: Helper to detect interactive handlers
-func (t *DevTUI) isInteractiveHandler(handlerName string) bool {
-	for _, tab := range t.TabSections {
-		for _, field := range tab.fieldHandlers {
-			if field.handler != nil && field.handler.Name() == handlerName {
-				return field.handler.handlerType == handlerTypeInteractive
-			}
-		}
-	}
-	return false
-}
-
 // createTabContent creates tabContent with unified logic
-func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string) tabContent {
+func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *tabSection, handlerName string, trackingID string, handlerColor string, hType handlerType) tabContent {
 	// Timestamp SIEMPRE nuevo usando GetNewID - Handle gracefully if unixid failed to initialize
 	var timestamp string
 	if h.id != nil {
@@ -177,5 +153,6 @@ func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *ta
 		handlerName:    padHandlerName(handlerName, HandlerNameWidth),
 		RawHandlerName: handlerName,
 		handlerColor:   handlerColor,
+		handlerType:    hType,
 	}
 }
