@@ -130,7 +130,11 @@ func (h *DevTUI) headerView() string {
 	displayTotal := min(totalTabs, 99)
 	pagination := Fmt("%2d/%2d", displayCurrent, displayTotal)
 	paginationStyled := h.paginationStyle.Render(pagination)
-	lineWidth := h.viewport.Width - lipgloss.Width(title) - lipgloss.Width(paginationStyled)
+	// -1 safety margin to avoid overflow
+	// Also account for spacers (width 1 * 2)
+	horizontalPadding := 1
+	spacerStyle := lipgloss.NewStyle().Width(horizontalPadding).Render("")
+	lineWidth := h.viewport.Width - lipgloss.Width(title) - lipgloss.Width(paginationStyled) - horizontalPadding*2 - 1
 	line := h.lineHeadFootStyle.Render(Convert("─").Repeat(max(0, lineWidth)).String())
-	return lipgloss.JoinHorizontal(lipgloss.Center, title, line, paginationStyled)
+	return lipgloss.JoinHorizontal(lipgloss.Center, title, spacerStyle, line, spacerStyle, paginationStyled)
 }
