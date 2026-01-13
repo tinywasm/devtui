@@ -144,7 +144,7 @@ func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, tim
 // Register in writing handlers list
 // registerLoggableHandler sets up logging for handlers implementing Loggable
 func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
-	handlerName := handler.Name()
+	nameFunc := handler.Name
 
 	// Detect streaming capability
 	showAll := false
@@ -203,26 +203,29 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 		// Get message type and content
 		messageStr, msgType := fmt.Translate(cleanMsg).StringType()
 
+		// Get CURRENT name for dynamic tracking
+		currentName := nameFunc()
+
 		// Tracking logic:
 		// If streaming (showAll) and not opening/closing -> no trackingID (always new line)
-		// If not streaming -> always use handlerName as trackingID
-		// If opening/closing -> use handlerName as trackingID (grouped)
+		// If not streaming -> always use currentName as trackingID
+		// If opening/closing -> use currentName as trackingID (grouped)
 		trackingID := ""
 		if !showAll || isOpening || isClosing {
-			trackingID = handlerName
+			trackingID = currentName
 		}
 
 		// Send to DevTUI
-		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, handlerName, trackingID, color)
+		ts.tui.sendMessageWithHandler(messageStr, msgType, ts, currentName, trackingID, color)
 
 		// Handle animation
 		if isOpening {
-			ts.startAnimation(handlerName, messageStr, msgType, color)
+			ts.startAnimation(currentName, messageStr, msgType, color)
 		} else if isClosing {
-			ts.stopAnimation(handlerName)
+			ts.stopAnimation(currentName)
 		} else if trackingID == "" {
 			// Regular streaming message: stop any pending animation
-			ts.stopAnimation(handlerName)
+			ts.stopAnimation(currentName)
 		}
 
 		if msgType == fmt.Msg.Error {
