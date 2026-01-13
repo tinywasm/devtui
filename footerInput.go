@@ -47,8 +47,8 @@ func (h *DevTUI) footerView() string {
 	info := h.renderScrollInfo()
 	horizontalPadding := 1
 	spacerStyle := lipgloss.NewStyle().Width(horizontalPadding).Render("")
-	// -1 safety margin to avoid overflow
-	lineWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2 - 1
+	// Remove safety margin to fill full width as requested
+	lineWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2
 	if lineWidth < 0 {
 		lineWidth = 0
 	}
@@ -109,8 +109,8 @@ func (h *DevTUI) renderFooterInput() string {
 		displayTotal := min(totalFields, 99)
 		fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
-		// -1 safety margin to avoid overflow
-		remainingWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2 - 1
+		// Remove safety margin to fill full width
+		remainingWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2
 		labelText := fmt.Convert(field.getExpandedFooterLabel()).Truncate(remainingWidth-1, 0).String()
 		displayStyle := lipgloss.NewStyle().
 			Width(remainingWidth).
@@ -141,8 +141,8 @@ func (h *DevTUI) renderFooterInput() string {
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 
 		// Para execution: el valor usa todo el espacio disponible (sin label separado)
-		// -1 safety margin to avoid overflow
-		usedWidth := lipgloss.Width(info) + lipgloss.Width(paginationStyled) + horizontalPadding*2 + 1
+		// Remove safety margin to fill full width
+		usedWidth := lipgloss.Width(info) + lipgloss.Width(paginationStyled) + horizontalPadding*2
 		valueWidth := h.viewport.Width - usedWidth
 		if valueWidth < 10 {
 			valueWidth = 10 // Mínimo
@@ -207,8 +207,8 @@ func (h *DevTUI) renderFooterInput() string {
 
 	// Calcular ancho para el valor incluyendo TODOS los elementos: [Pagination] [Label] [Value] [Scroll%]
 	// Layout tiene 3 espacios: pagination|space|label|space|value|space|scroll
-	// -1 safety margin to avoid overflow
-	usedWidth := lipgloss.Width(info) + lipgloss.Width(paddedLabel) + lipgloss.Width(paginationStyled) + horizontalPadding*3 + 1
+	// Remove safety margin to fill full width
+	usedWidth := lipgloss.Width(info) + lipgloss.Width(paddedLabel) + lipgloss.Width(paginationStyled) + horizontalPadding*3
 	valueWidth := h.viewport.Width - usedWidth
 	if valueWidth < 10 {
 		valueWidth = 10 // Mínimo
