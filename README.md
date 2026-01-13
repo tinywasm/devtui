@@ -59,6 +59,19 @@ DevTUI detects 5 specialized interfaces to determine how to display and interact
 ### 💡 Clean Terminal Policy
 Handlers implementing `Loggable` receive a logger. DevTUI only displays the **most recent message** per handler to keep the view focused. Full history is preserved for debugging.
 
+#### 🔄 Animated Progress Logs
+For long-running operations, you can use the `LogOpen` and `LogClose` prefixes as the **first argument** to the logger. This triggers an auto-animated spinner and groups messages under the same line.
+
+```go
+// Start animation (use "[..." literal or devtui.LogOpen)
+handler.log("[...", "Deploying to production")
+
+// ... long operation ...
+
+// Stop animation and show final result (use "...]" literal or devtui.LogClose)
+handler.log("...]", "Deployment complete")
+```
+
 ## ⌨️ Navigation & Shortcuts
 
 - **Tab / Shift+Tab**: Switch tabs

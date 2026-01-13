@@ -90,6 +90,15 @@ type StreamingLoggable interface {
 	AlwaysShowAllLogs() bool // Return true to show all messages
 }
 
+// LogOpen and LogClose are special prefixes for progress indication.
+// Use LogOpen at the start of a long operation to show an animated spinner.
+// Use LogClose when the operation completes to stop the animation.
+//
+// Example:
+//
+//	handler.log(devtui.LogOpen, "Deploying to production")
+//	// ... long operation ...
+//	handler.log(devtui.LogClose, "Deployment complete")
 const (
 	LogOpen  = "[..." // Start or update same line with auto-animation
 	LogClose = "...]" // Update same line and stop auto-animation
