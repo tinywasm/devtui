@@ -42,7 +42,13 @@ func (h *DevTUI) footerView() string {
 		displayCurrent = min(currentField, 99) + 1 // 1-based for display
 		displayTotal = min(totalFields, 99)
 	}
-	fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	// Force fixed width for alignment
+	rawPag := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	fieldPagination := lipgloss.NewStyle().Width(PaginationColumnWidth).Align(lipgloss.Center).Render(rawPag)
+	// Clip if necessary (though strictly not needed if controlled)
+	if len(fieldPagination) > PaginationColumnWidth {
+		fieldPagination = fieldPagination[:PaginationColumnWidth]
+	}
 	paginationStyled := h.paginationStyle.Render(fieldPagination)
 	info := h.renderScrollInfo()
 	horizontalPadding := 1
@@ -186,7 +192,7 @@ func (h *DevTUI) renderFooterInput() string {
 	labelWidth := h.labelWidth
 
 	// Truncar la etiqueta si es necesario
-	labelText := fmt.Convert(field.handler.Label()).Truncate(labelWidth-1, 0).String()
+	labelText := fmt.Convert(field.handler.Label()).Truncate(labelWidth, 0).String()
 
 	// Aplicar el estilo base para garantizar un ancho fijo
 	fixedWidthLabel := h.labelStyle.Render(labelText)
@@ -202,7 +208,9 @@ func (h *DevTUI) renderFooterInput() string {
 	}
 	displayCurrent := min(currentField, 99) + 1 // 1-based for display
 	displayTotal := min(totalFields, 99)
-	fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	// Force fixed width for alignment
+	rawPag := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	fieldPagination := lipgloss.NewStyle().Width(PaginationColumnWidth).Align(lipgloss.Center).Render(rawPag)
 	paginationStyled := h.paginationStyle.Render(fieldPagination)
 
 	// Calcular ancho para el valor incluyendo TODOS los elementos: [Pagination] [Label] [Value] [Scroll%]

@@ -110,10 +110,12 @@ func (h *DevTUI) headerView() string {
 
 	// Truncar el título si es necesario
 	headerText := h.AppName + "/" + tab.title
-	truncatedHeader := Convert(headerText).Truncate(h.labelWidth, 0).String()
+	// Use UIColumnWidth to match the full left column width (Footer: Pagination + Label)
+	truncatedHeader := Convert(headerText).Truncate(UIColumnWidth, 0).String()
 
 	// Aplicar el estilo base para garantizar un ancho fijo
-	fixedWidthHeader := h.labelStyle.Render(truncatedHeader)
+	// Use UIColumnWidth to match the full left column width
+	fixedWidthHeader := lipgloss.NewStyle().Width(UIColumnWidth).Align(lipgloss.Left).Render(truncatedHeader)
 
 	// Aplicar el estilo visual manteniendo el ancho fijo
 	title := h.headerTitleStyle.Render(fixedWidthHeader)

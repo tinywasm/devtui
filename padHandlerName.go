@@ -2,7 +2,8 @@ package devtui
 
 import "github.com/tinywasm/fmt"
 
-const HandlerNameWidth = 15
+// HandlerNameWidth is calculated in style.go to ensure the handler name block
+// aligns with the rest of the UI column
 
 // padHandlerName pads the handler name to a fixed width, centering it.
 // If the name is longer than width, it truncates it.

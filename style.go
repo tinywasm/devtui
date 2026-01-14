@@ -4,6 +4,28 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Layout Constants - Single Source of Truth for Alignment
+// UIColumnWidth determines the width of the left column (Header Title, Footer Label, Body Metadata)
+// Based on "TINYWASM/BUILD" (14) + padding, and body requirements.
+// 24 provides a balanced width:
+// - Header: "TINYWASM/BUILD" (14) fits comfortably
+// - Footer: "Compiler Mode" (13) fits comfortably
+// - Body: Timestamp (9) + HandlerName (15) = 24
+const (
+	// Master Width - Single Source of Truth for Left Column Alignment
+	UIColumnWidth = 24
+
+	// Fixed Element Widths
+	TimestampColumnWidth  = 9 // "HH:MM:SS "
+	PaginationColumnWidth = 5 // " 1/ 4"
+	FooterSpacerWidth     = 1 // Spacer between pagination and label
+	FooterExtraPadding    = 2 // Extra padding from having two distinct blocks (Pag+Label) vs one (Header)
+
+	// Derived Widths (Calculated automatically)
+	HandlerNameWidth = UIColumnWidth - TimestampColumnWidth
+	FooterLabelWidth = UIColumnWidth - PaginationColumnWidth - FooterSpacerWidth - FooterExtraPadding
+)
+
 type ColorPalette struct {
 	// Base (2 colores)
 	Foreground string // #F4F4F4
@@ -60,7 +82,8 @@ func newTuiStyle(palette *ColorPalette) *tuiStyle {
 
 	t := &tuiStyle{
 		ColorPalette: palette,
-		labelWidth:   18, // Definir un ancho estándar en caracteres para etiquetas
+		// LABEL uses the remaining space after pagination and spacer
+		labelWidth: FooterLabelWidth,
 	}
 
 	t.labelStyle = lipgloss.NewStyle().
