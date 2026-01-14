@@ -285,59 +285,53 @@ func (h *DevTUI) renderFooterInput() string {
 			cursorPos = len(runes)
 		}
 
-		// Estilo para el contenedor final (SOLO ancho y padding, SIN colores)
+		// Estilo base del texto (colores del input)
+		textStyle := lipgloss.NewStyle().
+			Background(lipgloss.Color(h.Secondary))
+		if h.editModeActivated {
+			textStyle = textStyle.Foreground(lipgloss.Color(h.Foreground))
+		} else {
+			textStyle = textStyle.Foreground(lipgloss.Color(h.Background))
+		}
+
+		// Estilo para el cursor invertido
+		cursorStyle := lipgloss.NewStyle().
+			Background(lipgloss.Color(h.Foreground)).
+			Foreground(lipgloss.Color(h.Secondary))
+
+		// Contenedor: solo ancho y padding, CON fondo para rellenar espacios
 		containerStyle := lipgloss.NewStyle().
 			Width(valueWidth).
-			Padding(0, horizontalPadding)
-
-		// Estilo base para el texto del input (con los colores del tema)
-		baseStyle := lipgloss.NewStyle().
+			Padding(0, horizontalPadding).
 			Background(lipgloss.Color(h.Secondary))
-
-		if h.editModeActivated && field.editable() {
-			baseStyle = baseStyle.Foreground(lipgloss.Color(h.Foreground))
-		} else {
-			baseStyle = baseStyle.Foreground(lipgloss.Color(h.Background))
-		}
 
 		if cursorPos < len(runes) {
 			// Cursor sobre un carácter: Overlay
 			char := string(runes[cursorPos])
+			beforeCursor := string(runes[:cursorPos])
+			afterCursor := string(runes[cursorPos+1:])
 
-			// Partes renderizadas individualmente con el estilo de color base
-			p1 := baseStyle.Render(string(runes[:cursorPos]))
-
-			var p2 string
+			var valueText string
 			if h.cursorVisible {
-				// Estilo invertido para el cursor
-				p2 = lipgloss.NewStyle().
-					Background(lipgloss.Color(h.Foreground)).
-					Foreground(lipgloss.Color(h.Secondary)).
-					Render(char)
+				// Cada parte tiene su propio estilo completo
+				valueText = textStyle.Render(beforeCursor) + cursorStyle.Render(char) + textStyle.Render(afterCursor)
 			} else {
-				p2 = baseStyle.Render(char)
+				// Cursor apagado: todo con estilo de texto
+				valueText = textStyle.Render(truncated)
 			}
-
-			p3 := baseStyle.Render(string(runes[cursorPos+1:]))
-
-			// Unir partes y aplicar el contenedor final
-			styledValue = containerStyle.Render(p1 + p2 + p3)
+			styledValue = containerStyle.Render(valueText)
 		} else {
-			// Cursor al final del texto: Bloque
-			p1 := baseStyle.Render(truncated)
-			var p2 string
+			// Cursor al final del texto
+			var valueText string
 			if h.cursorVisible {
-				p2 = lipgloss.NewStyle().
-					Background(lipgloss.Color(h.Foreground)).
-					Foreground(lipgloss.Color(h.Secondary)).
-					Render(" ")
+				valueText = textStyle.Render(truncated) + cursorStyle.Render(" ")
 			} else {
-				p2 = baseStyle.Render(" ")
+				valueText = textStyle.Render(truncated + " ")
 			}
-			styledValue = containerStyle.Render(p1 + p2)
+			styledValue = containerStyle.Render(valueText)
 		}
 	} else {
-		// Use the truncated text without cursor
+		// Sin cursor: renderizado estándar
 		styledValue = inputValueStyle.Render(truncated)
 	}
 

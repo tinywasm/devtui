@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 // TestInteractiveHandler is a mock handler that implements HandlerInteractive
@@ -167,6 +169,9 @@ func TestInteractiveHandler_EnterExecutesAndUpdatesTempEditValue(t *testing.T) {
 // --- Bug 4 Test: Cursor blinking should not shift text layout ---
 
 func TestInteractiveHandler_CursorBlinkingDoesNotShiftLayout(t *testing.T) {
+	// Forzar perfil de color para consistencia con otros tests
+	lipgloss.SetColorProfile(termenv.TrueColor)
+
 	h := DefaultTUIForTest()
 	tab := h.NewTabSection("WIZARD", "Test wizard")
 
@@ -198,12 +203,11 @@ func TestInteractiveHandler_CursorBlinkingDoesNotShiftLayout(t *testing.T) {
 
 	// BUG: Both renders should have the same VISUAL width
 	// The cursor space should always be reserved, even when invisible
-	// Note: We compare visual width (rune count in rendered area), not byte length
-	// because the cursor character (▋) is 3 bytes while space is 1 byte
-	visibleWidth := len([]rune(renderedVisible))
-	invisibleWidth := len([]rune(renderedInvisible))
+	// Use lipgloss.Width() to get the actual visual width (ignores ANSI codes)
+	visibleWidth := lipgloss.Width(renderedVisible)
+	invisibleWidth := lipgloss.Width(renderedInvisible)
 	if visibleWidth != invisibleWidth {
-		t.Errorf("Bug 4: Rendered visual width differs between cursor states. Visible: %d runes, Invisible: %d runes",
+		t.Errorf("Bug 4: Rendered visual width differs between cursor states. Visible: %d, Invisible: %d",
 			visibleWidth, invisibleWidth)
 	}
 }

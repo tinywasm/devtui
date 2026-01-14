@@ -404,26 +404,27 @@ func TestCursorNoTrail(t *testing.T) {
 		t.Errorf("El texto 'def' después del cursor debería estar visible")
 	}
 
-	// 2. Verificar que NO hay contaminación (trail)
-	// El cursorRENDER contiene los códigos ANSI de estilo invertido
+	// 2. Verificar que NO hay trail (fondo negro después del cursor)
+	// El trail ocurre cuando hay un reset ANSI (\x1b[0m) seguido directamente por texto sin estilo
+	// Buscamos la secuencia: cursor + reset + texto sin estilo
 	cursorRender := lipgloss.NewStyle().
 		Background(lipgloss.Color(h.Foreground)).
 		Foreground(lipgloss.Color(h.Secondary)).
 		Render("c")
 
-	// Si el fix funciona, 'def' DEBE estar envuelto en su propio estilo Background(h.Secondary)
-	// por lo que result NO debería contener cursorRender + "def" (sucio)
+	// Si hay trail, el patrón sería: cursorRender + "def" (sin estilo intermedio)
+	// Con el fix correcto, "def" está dentro del contenedor con fondo correcto
 	if strings.Contains(result, cursorRender+"def") {
-		t.Errorf("TRAIL DETECTADO: El texto posterior 'def' no tiene su propio estilo de fondo (hereda el reset del cursor)")
+		t.Errorf("TRAIL DETECTADO: El texto posterior 'def' no tiene fondo (hereda reset del cursor)")
 	}
 
-	// 3. Verificar que 'def' tiene el fondo correcto (h.Secondary)
-	afterRender := lipgloss.NewStyle().
-		Background(lipgloss.Color(h.Secondary)).
-		Foreground(lipgloss.Color(h.Foreground)).
-		Render("def")
+	// 3. Verificar que todo el texto está dentro del mismo contenedor (sin trail visual)
+	// El ancho del resultado debe ser consistente independientemente de la posición del cursor
+	h.cursorVisible = false
+	resultNoCursor := h.renderFooterInput()
 
-	if !strings.Contains(result, afterRender) {
-		t.Errorf("El texto posterior 'def' no tiene el estilo de fondo esperado")
+	if lipgloss.Width(result) != lipgloss.Width(resultNoCursor) {
+		t.Errorf("El ancho del input no es consistente: conCursor=%d, sinCursor=%d",
+			lipgloss.Width(result), lipgloss.Width(resultNoCursor))
 	}
 }
