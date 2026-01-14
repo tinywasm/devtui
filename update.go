@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	. "github.com/tinywasm/fmt"
+	tinytime "github.com/tinywasm/time"
 )
 
 // listenToMessages crea un comando para escuchar mensajes del canal
@@ -85,7 +86,7 @@ func (h *DevTUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tickMsg: // update the time every second
-		h.currentTime = time.Now().Format("15:04:05")
+		h.currentTime = tinytime.FormatTime(tinytime.Now())
 		cmds = append(cmds, h.tickEverySecond())
 
 	case cursorTickMsg: // toggle cursor for blinking effect

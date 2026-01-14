@@ -1,10 +1,9 @@
 package devtui
 
 import (
-	"time"
-
 	"github.com/charmbracelet/lipgloss"
 	. "github.com/tinywasm/fmt"
+	tinytime "github.com/tinywasm/time"
 )
 
 // NEW: sendMessageWithHandler sends a message with handler identification
@@ -64,8 +63,8 @@ func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 
 // generateTimestampPlain returns timestamp without styling
 func (t *DevTUI) generateTimestampPlain(timestamp string) string {
-	if t.timeProvider != nil && timestamp != "" {
-		return t.timeProvider.FormatTime(timestamp)
+	if timestamp != "" {
+		return tinytime.FormatTime(timestamp)
 	}
 	return "--:--:--"
 }
@@ -95,9 +94,9 @@ func (t *DevTUI) applyMessageTypeStyle(content string, msgType MessageType) stri
 }
 
 func (t *DevTUI) generateTimestamp(timestamp string) string {
-	if t.timeProvider != nil && timestamp != "" {
+	if timestamp != "" {
 		// FormatTime accepts any (string, int64, etc.) and returns "HH:MM:SS"
-		return t.timeStyle.Render(t.timeProvider.FormatTime(timestamp))
+		return t.timeStyle.Render(tinytime.FormatTime(timestamp))
 	}
 	return t.timeStyle.Render("--:--:--")
 }
@@ -138,7 +137,7 @@ func (h *DevTUI) createTabContent(content string, mt MessageType, tabSection *ta
 			h.Logger("Warning: unixid not initialized, using fallback timestamp for content: " + content)
 		}
 		// Graceful fallback when unixid initialization failed
-		timestamp = h.timeProvider.FormatTime(time.Now().UnixNano())
+		timestamp = tinytime.FormatTime(tinytime.Now())
 	}
 
 	return tabContent{

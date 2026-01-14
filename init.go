@@ -25,8 +25,7 @@ type DevTUI struct {
 	*TuiConfig
 	*tuiStyle
 
-	id           *unixid.UnixID
-	timeProvider tinytime.TimeProvider
+	id *unixid.UnixID
 
 	ready    bool
 	viewport viewport.Model
@@ -101,17 +100,13 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		// id will remain nil, but createTabContent method will handle this gracefully now
 	}
 
-	// Initialize time provider for timestamp formatting
-	timeProvider := tinytime.NewTimeProvider()
-
 	tui := &DevTUI{
 		TuiConfig:        c,
 		focused:          true, // assume the app is focused
 		TabSections:      []*tabSection{},
-		timeProvider:     timeProvider,
 		activeTab:        0, // Will be adjusted in Start() method
 		tabContentsChan:  make(chan tabContent, 1000),
-		currentTime:      time.Now().Format("15:04:05"),
+		currentTime:      tinytime.FormatTime(tinytime.Now()),
 		tuiStyle:         newTuiStyle(c.Color),
 		id:               id,                    // Set the ID here
 		shortcutRegistry: newShortcutRegistry(), // NEW: Initialize shortcut registry

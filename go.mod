@@ -5,7 +5,7 @@ go 1.25.2
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/tinywasm/fmt v0.14.0
-	github.com/tinywasm/time v0.2.11
+	github.com/tinywasm/time v0.3.0
 )
 
 require (
@@ -31,8 +31,8 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.19 // indirect
-	github.com/muesli/termenv v0.16.0 // indirect
+	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/tinywasm/unixid v0.2.13
+	github.com/tinywasm/unixid v0.2.14
 	golang.org/x/sys v0.39.0 // indirect
 )
