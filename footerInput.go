@@ -284,15 +284,30 @@ func (h *DevTUI) renderFooterInput() string {
 			cursorPos = len(runes)
 		}
 
-		// Insertar el cursor en la posición correcta dentro de la cadena truncada (ventana visible)
-		beforeCursor := string(runes[:cursorPos])
-		afterCursor := string(runes[cursorPos:])
+		if cursorPos < len(runes) {
+			// Cursor sobre un carácter: Overlay (resaltar el carácter actual)
+			if h.cursorVisible {
+				// Invertir colores para el cursor sobre texto
+				char := string(runes[cursorPos])
+				renderCursor := lipgloss.NewStyle().
+					Background(lipgloss.Color(h.Foreground)).
+					Foreground(lipgloss.Color(h.Secondary)).
+					Render(char)
 
-		if h.cursorVisible {
-			valueText = beforeCursor + "▋" + afterCursor
+				// El texto mantiene su longitud original
+				valueText = string(runes[:cursorPos]) + renderCursor + string(runes[cursorPos+1:])
+			} else {
+				// Parpadeo apagado: texto normal
+				valueText = truncated
+			}
 		} else {
-			// When cursor is invisible (blinking off), use a space to maintain consistent width
-			valueText = beforeCursor + " " + afterCursor
+			// Cursor al final del texto: Comportamiento estándar de bloque
+			if h.cursorVisible {
+				valueText = truncated + "▋"
+			} else {
+				// Espacio invisible al FINAL para mantener el ancho de reserva del cursor
+				valueText = truncated + " "
+			}
 		}
 	} else {
 		// Use the truncated text without cursor

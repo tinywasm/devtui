@@ -70,13 +70,9 @@ func TestFooterView(t *testing.T) {
 func TestRenderFooterInput(t *testing.T) {
 	// Caso 1: Campo editable en modo edición debe mostrar cursor
 	t.Run("editable field in edit mode shows cursor", func(t *testing.T) {
-		h := DefaultTUIForTest(func(messages ...any) {
-			// Test logger - do nothing
-		})
+		h := DefaultTUIForTest(func(messages ...any) {})
 		h.editModeActivated = true
 		tab := h.TabSections[h.activeTab]
-
-		// Crear un nuevo field con handler para la prueba
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "test value")
 		h.AddHandler(testHandler, 0, "", tab)
@@ -85,7 +81,7 @@ func TestRenderFooterInput(t *testing.T) {
 		h.viewport.Width = 80
 
 		field := tab.fieldHandlers[0]
-		field.setCursorForTest(2) // Cursor en posición "te|st value"
+		field.setCursorForTest(2) // Cursor en posición 's': te[s]t value
 		field.setTempEditValueForTest("test value")
 
 		// Ensure cursor is visible for this test
@@ -94,10 +90,16 @@ func TestRenderFooterInput(t *testing.T) {
 		// Renderizar input
 		result := h.renderFooterInput()
 
-		// Verificar que te aparece antes del cursor y st value después del cursor
-		cursor := "▋"
-		if !strings.Contains(result, "te"+cursor+"st value") {
-			t.Errorf("El cursor no se renderiza correctamente en la posición esperada (te▋st value), resultado: %s", result)
+		// Con cursor Overlay, ya no buscamos "te▋st value"
+		// Sino que buscamos el carácter 's' resaltado (con estilo invertido)
+		char := "s"
+		expectedRender := lipgloss.NewStyle().
+			Background(lipgloss.Color(h.Foreground)).
+			Foreground(lipgloss.Color(h.Secondary)).
+			Render(char)
+
+		if !strings.Contains(result, expectedRender) {
+			t.Errorf("El cursor overlay para el carácter 's' no se encuentra en el resultado")
 		}
 	})
 
@@ -341,4 +343,37 @@ func TestInputNavigation(t *testing.T) {
 				field.cursor)
 		}
 	})
+}
+
+func TestCursorNoExtraSpace(t *testing.T) {
+	h := DefaultTUIForTest(func(messages ...any) {})
+	h.viewport.Width = 80
+	h.editModeActivated = true
+
+	tab := h.TabSections[h.activeTab]
+	tab.setFieldHandlers([]*field{})
+
+	// Texto original tiene largo 5
+	originalText := "value"
+	testHandler := NewTestEditableHandler("Test", originalText)
+	h.AddHandler(testHandler, 0, "", tab)
+
+	f := tab.fieldHandlers[0]
+	f.setTempEditValueForTest(originalText)
+	f.setCursorForTest(3) // Cursor en medio: val|ue
+
+	// Render with cursor invisible (blinking off)
+	h.cursorVisible = false
+	result := h.renderFooterInput()
+
+	// El bug actual inserta un espacio: "val ue" (largo 6)
+	// El comportamiento deseado (Overlay) mantendrá "value" (largo 5)
+
+	if strings.Contains(result, "val ue") {
+		t.Errorf("DEBUG: Se detectó el bug del espacio extra ('val ue')")
+	}
+
+	if !strings.Contains(result, originalText) {
+		t.Errorf("El texto original %q debería estar presente sin espacios extra en medio", originalText)
+	}
 }
