@@ -70,16 +70,16 @@ func (h *DevTUI) renderScrollInfo() string {
 	atTop := h.viewport.AtTop()
 	atBottom := h.viewport.AtBottom()
 
-	// Use fixed width of 6 chars for consistency with pagination
+	// Use PaginationColumnWidth (5) for consistency with all corner elements
 	switch {
 	case atTop && atBottom:
-		scrollIcon = "  ■   " // All content visible (empty square)
+		scrollIcon = "  ■  " // All content visible (centered square)
 	case atTop && !atBottom:
-		scrollIcon = "  ▼   " // Can scroll down (down triangle)
+		scrollIcon = "  ▼  " // Can scroll down (centered arrow)
 	case !atTop && atBottom:
-		scrollIcon = "  ▲   " // Can scroll up (up triangle)
+		scrollIcon = "  ▲  " // Can scroll up (centered arrow)
 	default:
-		scrollIcon = " ▼ ▲  " // Can scroll both directions (both arrows)
+		scrollIcon = " ▼ ▲ " // Both directions (5 chars)
 	}
 
 	return h.footerInfoStyle.Render(scrollIcon)
