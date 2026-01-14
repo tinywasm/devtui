@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/termenv"
 )
 
 // TestFooterView verifica el comportamiento del renderizado del footer
@@ -375,5 +376,54 @@ func TestCursorNoExtraSpace(t *testing.T) {
 
 	if !strings.Contains(result, originalText) {
 		t.Errorf("El texto original %q debería estar presente sin espacios extra en medio", originalText)
+	}
+}
+
+func TestCursorNoTrail(t *testing.T) {
+	// Forzar perfil de color para que los tests sean consistentes
+	lipgloss.SetColorProfile(termenv.TrueColor)
+
+	h := DefaultTUIForTest(func(messages ...any) {})
+	h.viewport.Width = 80
+	h.editModeActivated = true
+	h.cursorVisible = true
+
+	tab := h.TabSections[h.activeTab]
+	tab.setFieldHandlers([]*field{})
+	testHandler := NewTestEditableHandler("Path", "abcdef")
+	h.AddHandler(testHandler, 0, "", tab)
+
+	f := tab.fieldHandlers[0]
+	f.setTempEditValueForTest("abcdef")
+	f.setCursorForTest(2) // Cursor en 'c': ab[c]def
+
+	result := h.renderFooterInput()
+
+	// 1. Verificar que el texto 'def' está presente
+	if !strings.Contains(result, "def") {
+		t.Errorf("El texto 'def' después del cursor debería estar visible")
+	}
+
+	// 2. Verificar que NO hay contaminación (trail)
+	// El cursorRENDER contiene los códigos ANSI de estilo invertido
+	cursorRender := lipgloss.NewStyle().
+		Background(lipgloss.Color(h.Foreground)).
+		Foreground(lipgloss.Color(h.Secondary)).
+		Render("c")
+
+	// Si el fix funciona, 'def' DEBE estar envuelto en su propio estilo Background(h.Secondary)
+	// por lo que result NO debería contener cursorRender + "def" (sucio)
+	if strings.Contains(result, cursorRender+"def") {
+		t.Errorf("TRAIL DETECTADO: El texto posterior 'def' no tiene su propio estilo de fondo (hereda el reset del cursor)")
+	}
+
+	// 3. Verificar que 'def' tiene el fondo correcto (h.Secondary)
+	afterRender := lipgloss.NewStyle().
+		Background(lipgloss.Color(h.Secondary)).
+		Foreground(lipgloss.Color(h.Foreground)).
+		Render("def")
+
+	if !strings.Contains(result, afterRender) {
+		t.Errorf("El texto posterior 'def' no tiene el estilo de fondo esperado")
 	}
 }
