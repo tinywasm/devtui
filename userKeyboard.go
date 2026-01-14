@@ -67,6 +67,7 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 		case tea.KeyLeft: // Mover el cursor a la izquierda dentro del texto
 			if currentField.cursor > 0 {
 				currentField.cursor--
+				currentField.viewport.AdjustViewForCursor(len([]rune(currentField.Value())), currentField.cursor, availableTextWidth-1)
 			}
 
 		case tea.KeyRight: // Mover el cursor a la derecha dentro del texto
@@ -76,6 +77,7 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 			}
 			if currentField.cursor < len([]rune(value)) {
 				currentField.cursor++
+				currentField.viewport.AdjustViewForCursor(len([]rune(value)), currentField.cursor, availableTextWidth-1)
 			}
 
 		case tea.KeyBackspace: // Borrar carácter a la izquierda
@@ -91,6 +93,7 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 					newRunes := slices.Delete(runes, currentField.cursor-1, currentField.cursor)
 					currentField.tempEditValue = string(newRunes)
 					currentField.cursor--
+					currentField.viewport.AdjustViewForCursor(len(newRunes), currentField.cursor, availableTextWidth-1)
 				}
 			}
 
@@ -105,16 +108,15 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 				currentField.cursor = len(runes)
 			}
 
-			// Verificar si agregar un espacio excedería el ancho disponible
-			if len(runes)+1 < availableTextWidth {
-				// Insert the space at cursor position
-				newRunes := make([]rune, 0, len(runes)+1)
-				newRunes = append(newRunes, runes[:currentField.cursor]...)
-				newRunes = append(newRunes, ' ') // Agregar el espacio
-				newRunes = append(newRunes, runes[currentField.cursor:]...)
-				currentField.tempEditValue = string(newRunes)
-				currentField.cursor++
-			}
+			// Insert the space at cursor position
+			newRunes := make([]rune, 0, len(runes)+1)
+			newRunes = append(newRunes, runes[:currentField.cursor]...)
+			newRunes = append(newRunes, ' ') // Agregar el espacio
+			newRunes = append(newRunes, runes[currentField.cursor:]...)
+			currentField.tempEditValue = string(newRunes)
+			currentField.cursor++
+
+			currentField.viewport.AdjustViewForCursor(len(newRunes), currentField.cursor, availableTextWidth-1)
 
 		case tea.KeyRunes:
 			// Handle normal character input - convert everything to runes for proper handling
@@ -126,18 +128,15 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 					currentField.cursor = len(runes)
 				}
 
-				// Verificar si agregar los nuevos caracteres excedería el ancho disponible
-				totalChars := len(runes) + len(msg.Runes)
-				if totalChars < availableTextWidth {
-					// Insert the new runes at cursor position
-					newRunes := make([]rune, 0, len(runes)+len(msg.Runes))
-					newRunes = append(newRunes, runes[:currentField.cursor]...)
-					newRunes = append(newRunes, msg.Runes...)
-					newRunes = append(newRunes, runes[currentField.cursor:]...)
-					currentField.tempEditValue = string(newRunes)
-					currentField.cursor += len(msg.Runes)
-				}
-				// Si excede el ancho, simplemente no agregar los caracteres
+				// Insert the new runes at cursor position
+				newRunes := make([]rune, 0, len(runes)+len(msg.Runes))
+				newRunes = append(newRunes, runes[:currentField.cursor]...)
+				newRunes = append(newRunes, msg.Runes...)
+				newRunes = append(newRunes, runes[currentField.cursor:]...)
+				currentField.tempEditValue = string(newRunes)
+				currentField.cursor += len(msg.Runes)
+
+				currentField.viewport.AdjustViewForCursor(len(newRunes), currentField.cursor, availableTextWidth-1)
 			}
 		}
 	} else { // Si el campo no es editable, solo ejecutar la acción

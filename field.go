@@ -13,7 +13,8 @@ type field struct {
 	// Internal fields for editing
 	tempEditValue string // use for edit
 	index         int
-	cursor        int // cursor position in text value
+	cursor        int          // cursor position in text value
+	viewport      TextViewport // Manages horizontal scroll
 }
 
 // setTempEditValueForTest permite modificar tempEditValue en tests

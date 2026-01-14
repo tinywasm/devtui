@@ -251,8 +251,8 @@ func (h *DevTUI) renderFooterInput() string {
 		textLimit = 1
 	}
 
-	// Truncate the value based on the calculated limit
-	truncated := fmt.Convert(valueText).Truncate(textLimit, 0).String()
+	// Calculate the visible part of the text using the viewport
+	truncated, cursorInView := field.viewport.CalculateVisibleWindow(valueText, field.cursor, textLimit)
 
 	// Definir el estilo para el valor del campo
 	inputValueStyle := lipgloss.NewStyle().
@@ -269,24 +269,22 @@ func (h *DevTUI) renderFooterInput() string {
 		// Edit en modo no edición
 		inputValueStyle = inputValueStyle.
 			Background(lipgloss.Color(h.Secondary)).
+			Background(lipgloss.Color(h.Secondary)).
 			Foreground(lipgloss.Color(h.Background))
 	}
 
 	// Añadir cursor si corresponde
 	if showCursor {
-		// Asegurar que el cursor está dentro de los límites de la cadena truncada
 		runes := []rune(truncated)
-		if field.cursor < 0 {
-			field.cursor = 0
+		cursorPos := cursorInView
+		if cursorPos < 0 {
+			cursorPos = 0
 		}
-		// If cursor is beyond visible/truncated area, we could handle it better,
-		// but for now, let's just make sure it doesn't crash.
-		cursorPos := field.cursor
 		if cursorPos > len(runes) {
 			cursorPos = len(runes)
 		}
 
-		// Insertar el cursor en la posición correcta dentro de la cadena truncada
+		// Insertar el cursor en la posición correcta dentro de la cadena truncada (ventana visible)
 		beforeCursor := string(runes[:cursorPos])
 		afterCursor := string(runes[cursorPos:])
 
