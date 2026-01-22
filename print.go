@@ -121,7 +121,7 @@ func (t *DevTUI) formatHandlerName(handlerName string, handlerColor string) stri
 		Foreground(lipgloss.Color(t.Foreground)) // Use foreground for text contrast
 
 	styledName := style.Render(handlerName)
-	// styledName := style.Render(Fmt("[%s]", handlerName))
+	// styledName := style.Render(Sprintf("[%s]", handlerName))
 	return styledName + " "
 }
 
