@@ -38,10 +38,10 @@ github.com/muesli/termenv v0.16.0 h1:S5AlUN9dENB57rsbnkPyfdGuWIlkmzJjbFf0Tf5FWUc
 github.com/muesli/termenv v0.16.0/go.mod h1:ZRfOIKPFDYQoDFF4Olj7/QJbW60Ol/kL1pU3VfY/Cnk=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
-github.com/tinywasm/fmt v0.14.0 h1:Z3mudKuoxRPB97VEisk9pkV2tdvt2YxgJygPJEcPeo4=
-github.com/tinywasm/fmt v0.14.0/go.mod h1:L2GCAi6asgytPV6TVvGrRq5Ml+DkUt1Ijo5i/2J1jOY=
-github.com/tinywasm/time v0.3.0 h1:2r1SppZolSvPLf73hrINLQ1RyqR2uDbNDk4KKbqQ/40=
-github.com/tinywasm/time v0.3.0/go.mod h1:dPW5LITwcw3ZKF6SyMmm+DV9KkRVor14SRRyX8KXpyk=
+github.com/tinywasm/fmt v0.16.1 h1:g87ny5CxZSavDpZZNxSYNW+7aaaHYzRwuD+lYGtPceo=
+github.com/tinywasm/fmt v0.16.1/go.mod h1:L2GCAi6asgytPV6TVvGrRq5Ml+DkUt1Ijo5i/2J1jOY=
+github.com/tinywasm/time v0.3.1 h1:TM1XdXyxK5o2A7SLabNo37QUrzXRbyIkSseyKZBJCTo=
+github.com/tinywasm/time v0.3.1/go.mod h1:e/WhM6SRuko8xdm92wjyVZsv/ds6SikpaZG6jnzhwFc=
 github.com/tinywasm/unixid v0.2.14 h1:GYsj6Q4t+wcwaUexROXyJ+12j/LWl26igj9MewlblQc=
 github.com/tinywasm/unixid v0.2.14/go.mod h1:l+MCGO2CL6SPF8ZqJ6YokepAOQGoA1sGCBV5r/W5Sr4=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=

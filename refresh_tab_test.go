@@ -90,7 +90,7 @@ func TestRefreshCurrentTabFromMultipleGoroutines(t *testing.T) {
 			defer refreshWg.Done()
 			// Simulate external tool work
 			time.Sleep(time.Millisecond * time.Duration(id*2))
-			msg := Fmt("Tool %d update", id)
+			msg := Sprintf("Tool %d update", id)
 			tabSection.addNewContent(Msg.Info, msg)
 			tui.RefreshUI() // Public method call - should not panic
 		}(i)
@@ -111,7 +111,7 @@ func TestRefreshCurrentTabFromMultipleGoroutines(t *testing.T) {
 	tabSection.mu.RLock()
 	defer tabSection.mu.RUnlock()
 	for i := 0; i < 10; i++ {
-		expected := Fmt("Tool %d update", i)
+		expected := Sprintf("Tool %d update", i)
 		found := false
 		for _, content := range tabSection.tabContents {
 			if strings.Contains(content.Content, expected) {

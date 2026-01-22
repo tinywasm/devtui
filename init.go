@@ -83,7 +83,7 @@ type TuiConfig struct {
 //	    AppName: "MyApp",
 //	    ExitChan: make(chan bool),
 //	    Color: nil, // or your *ColorPalette
-//	    Logger: func(err any) { os.Stdout.WriteString(fmt.Fmt("%v\n", err)) },
+//	    Logger: func(err any) { os.Stdout.WriteString(fmt.Sprintf("%v\n", err)) },
 //	}
 //	tui := NewTUI(config)
 func NewTUI(c *TuiConfig) *DevTUI {
@@ -163,7 +163,7 @@ func (h *DevTUI) Start(args ...any) {
 	h.checkAndTriggerInteractiveContent()
 
 	if _, err := h.tea.Run(); err != nil {
-		os.Stdout.WriteString(fmt.Fmt("Error running DevTUI: %v\n", err))
+		os.Stdout.WriteString(fmt.Sprintf("Error running DevTUI: %v\n", err))
 		os.Stdout.WriteString("\nPress any key to exit...\n")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
 	}

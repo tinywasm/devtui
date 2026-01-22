@@ -21,7 +21,7 @@ func (t *DevTUI) ReturnFocus() error {
 		return cmd.Run()
 
 	case "darwin":
-		cmd := exec.Command("osascript", "-e", fmt.Fmt(`
+		cmd := exec.Command("osascript", "-e", fmt.Sprintf(`
             tell application "System Events"
                 set frontmost of the first process whose unix id is %d to true
             end tell
@@ -30,7 +30,7 @@ func (t *DevTUI) ReturnFocus() error {
 
 	case "windows":
 		// Usando taskkill para verificar si el proceso existe y obtener su ventana
-		cmd := exec.Command("cmd", "/C", fmt.Fmt("tasklist /FI \"PID eq %d\" /FO CSV /NH", pid))
+		cmd := exec.Command("cmd", "/C", fmt.Sprintf("tasklist /FI \"PID eq %d\" /FO CSV /NH", pid))
 		return cmd.Run()
 
 	default:

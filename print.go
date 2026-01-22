@@ -51,12 +51,12 @@ func (t *DevTUI) formatMessage(msg tabContent, styled bool) string {
 	// Check if message comes from interactive handler - clean format with timestamp only
 	if msg.handlerType == handlerTypeInteractive {
 		// Interactive handlers: timestamp + content (no handler name for cleaner UX)
-		return Fmt("%s %s", timeStr, content)
+		return Sprintf("%s %s", timeStr, content)
 	}
 
 	// Default format for other handlers (Edit, Execution, Writers)
 	// Use already padded handlerName for consistent width
-	return Fmt("%s %s%s", timeStr, handlerName, content)
+	return Sprintf("%s %s%s", timeStr, handlerName, content)
 }
 
 // Helper methods to reduce code duplication

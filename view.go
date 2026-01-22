@@ -9,7 +9,7 @@ func (h *DevTUI) View() string {
 	if !h.ready {
 		return "\n  Initializing..."
 	}
-	return Fmt("%s\n%s\n%s", h.headerView(), h.viewport.View(), h.footerView())
+	return Sprintf("%s\n%s\n%s", h.headerView(), h.viewport.View(), h.footerView())
 }
 
 // ContentView renderiza los mensajes para una sección de contenido
@@ -130,7 +130,7 @@ func (h *DevTUI) headerView() string {
 	}
 	displayCurrent := min(currentTab, 99) + 1 // 1-based for display
 	displayTotal := min(totalTabs, 99)
-	pagination := Fmt("%2d/%2d", displayCurrent, displayTotal)
+	pagination := Sprintf("%2d/%2d", displayCurrent, displayTotal)
 	paginationStyled := h.paginationStyle.Render(pagination)
 	// Remove safety margin to fill full width
 	// Also account for spacers (width 1 * 2)

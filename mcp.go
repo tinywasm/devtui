@@ -99,7 +99,7 @@ func (d *DevTUI) mcpGetSectionLogs(args map[string]any) {
 		var result string
 		result = "Available sections:\n"
 		for _, section := range d.TabSections {
-			result += Fmt("- %s\n", section.title)
+			result += Sprintf("- %s\n", section.title)
 		}
 		if d.mcpLogger != nil {
 			d.mcpLogger(result)
@@ -118,7 +118,7 @@ func (d *DevTUI) mcpGetSectionLogs(args map[string]any) {
 
 	if targetSection == nil {
 		if d.mcpLogger != nil {
-			d.mcpLogger(Fmt("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles()))
+			d.mcpLogger(Sprintf("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles()))
 		}
 		return
 	}
@@ -127,7 +127,7 @@ func (d *DevTUI) mcpGetSectionLogs(args map[string]any) {
 	logs := d.getSectionLogsPlain(targetSection)
 	if logs == "" {
 		if d.mcpLogger != nil {
-			d.mcpLogger(Fmt("Section '%s' has no logs yet.", sectionName))
+			d.mcpLogger(Sprintf("Section '%s' has no logs yet.", sectionName))
 		}
 		return
 	}

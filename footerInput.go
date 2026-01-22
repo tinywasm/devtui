@@ -43,7 +43,7 @@ func (h *DevTUI) footerView() string {
 		displayTotal = min(totalFields, 99)
 	}
 	// Force fixed width for alignment
-	rawPag := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	rawPag := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
 	fieldPagination := lipgloss.NewStyle().Width(PaginationColumnWidth).Align(lipgloss.Center).Render(rawPag)
 	// Clip if necessary (though strictly not needed if controlled)
 	if len(fieldPagination) > PaginationColumnWidth {
@@ -113,7 +113,7 @@ func (h *DevTUI) renderFooterInput() string {
 		}
 		displayCurrent := min(currentField, 99) + 1 // 1-based for display
 		displayTotal := min(totalFields, 99)
-		fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+		fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 		// Remove safety margin to fill full width
 		remainingWidth := h.viewport.Width - lipgloss.Width(info) - lipgloss.Width(paginationStyled) - horizontalPadding*2
@@ -143,7 +143,7 @@ func (h *DevTUI) renderFooterInput() string {
 		}
 		displayCurrent := min(currentField, 99) + 1 // 1-based for display
 		displayTotal := min(totalFields, 99)
-		fieldPagination := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+		fieldPagination := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
 		paginationStyled := h.paginationStyle.Render(fieldPagination)
 
 		// Para execution: el valor usa todo el espacio disponible (sin label separado)
@@ -209,7 +209,7 @@ func (h *DevTUI) renderFooterInput() string {
 	displayCurrent := min(currentField, 99) + 1 // 1-based for display
 	displayTotal := min(totalFields, 99)
 	// Force fixed width for alignment
-	rawPag := fmt.Fmt("%2d/%2d", displayCurrent, displayTotal)
+	rawPag := fmt.Sprintf("%2d/%2d", displayCurrent, displayTotal)
 	fieldPagination := lipgloss.NewStyle().Width(PaginationColumnWidth).Align(lipgloss.Center).Render(rawPag)
 	paginationStyled := h.paginationStyle.Render(fieldPagination)
 

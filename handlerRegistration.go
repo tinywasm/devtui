@@ -10,7 +10,7 @@ import (
 // Returns the typed tabSection or panics with clear error message
 func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 	if tab == nil {
-		panic(fmt.Fmt(
+		panic(fmt.Sprintf(
 			"DevTUI.%s: tabSection parameter is nil\n"+
 				"Usage: tab := tui.NewTabSection(...); tui.%s(..., tab)",
 			methodName, methodName))
@@ -18,7 +18,7 @@ func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 
 	ts, ok := tab.(*tabSection)
 	if !ok {
-		panic(fmt.Fmt(
+		panic(fmt.Sprintf(
 			"DevTUI.%s: invalid tabSection type %T\n"+
 				"Expected: value returned by tui.NewTabSection()\n"+
 				"Got: %T\n"+
@@ -27,7 +27,7 @@ func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 	}
 
 	if ts.tui != t {
-		panic(fmt.Fmt(
+		panic(fmt.Sprintf(
 			"DevTUI.%s: tabSection belongs to different DevTUI instance\n"+
 				"Each tabSection can only be used with the DevTUI instance that created it",
 			methodName))
@@ -184,12 +184,12 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 			if str, ok := message[0].(string); ok {
 				msg = str
 			} else {
-				msg = fmt.Fmt("%v", message[0])
+				msg = fmt.Sprintf("%v", message[0])
 			}
 		} else {
-			msg = fmt.Fmt("%v", message[0])
+			msg = fmt.Sprintf("%v", message[0])
 			for _, m := range message[1:] {
-				msg += " " + fmt.Fmt("%v", m)
+				msg += " " + fmt.Sprintf("%v", m)
 			}
 		}
 
@@ -236,7 +236,7 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 			ts.stopAnimation(currentName)
 		}
 
-		if msgType == fmt.Msg.Error {
+		if msgType == fmt.Msg.Error || msgType == fmt.Msg.Debug {
 			ts.tui.Logger(msg)
 		}
 	}

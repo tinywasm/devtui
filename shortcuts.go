@@ -108,7 +108,7 @@ Scroll `, D.Status, D.Icons, `:
 		if len(shortcuts) > 0 {
 			content += "\n\nRegistered Shortcuts:\n"
 			for key, description := range shortcuts {
-				content += Fmt("  • %s - %s\n", key, description)
+				content += Sprintf("  • %s - %s\n", key, description)
 			}
 		}
 	}
