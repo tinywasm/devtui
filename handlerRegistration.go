@@ -1,8 +1,6 @@
 package devtui
 
 import (
-	"time"
-
 	"github.com/tinywasm/fmt"
 )
 
@@ -60,15 +58,15 @@ func (t *DevTUI) validateTabSection(tab any, methodName string) *tabSection {
 // Example:
 //
 //	tab := tui.NewTabSection("BUILD", "Compiler")
-//	tui.AddHandler(myEditHandler, 2*time.Second, "#3b82f6", tab)
-//	tui.AddHandler(myDisplayHandler, 0, "", tab)
-func (t *DevTUI) AddHandler(handler any, timeout time.Duration, color string, tabSection any) {
+//	tui.AddHandler(myEditHandler, "#3b82f6", tab)
+//	tui.AddHandler(myDisplayHandler, "", tab)
+func (t *DevTUI) AddHandler(handler any, color string, tabSection any) {
 	ts := t.validateTabSection(tabSection, "AddHandler")
-	ts.addHandler(handler, timeout, color)
+	ts.addHandler(handler, color)
 }
 
 // addHandler - internal method (lowercase, private)
-func (ts *tabSection) addHandler(handler any, timeout time.Duration, color string) {
+func (ts *tabSection) addHandler(handler any, color string) {
 	// Detect Loggable interface and inject logger
 	if loggable, ok := handler.(Loggable); ok {
 		ts.registerLoggableHandler(loggable, color)
@@ -81,13 +79,13 @@ func (ts *tabSection) addHandler(handler any, timeout time.Duration, color strin
 		ts.registerDisplayHandler(h, color)
 
 	case HandlerInteractive:
-		ts.registerInteractiveHandler(h, timeout, color)
+		ts.registerInteractiveHandler(h, color)
 
 	case HandlerExecution:
-		ts.registerExecutionHandler(h, timeout, color)
+		ts.registerExecutionHandler(h, color)
 
 	case HandlerEdit:
-		ts.registerEditHandler(h, timeout, color)
+		ts.registerEditHandler(h, color)
 
 	default:
 		// If not a known interface but is Loggable, it's valid (logging-only handler)
@@ -111,8 +109,8 @@ func (ts *tabSection) registerDisplayHandler(handler HandlerDisplay, color strin
 	ts.addFields(f)
 }
 
-func (ts *tabSection) registerEditHandler(handler HandlerEdit, timeout time.Duration, color string) {
-	anyH := NewEditHandler(handler, timeout, color)
+func (ts *tabSection) registerEditHandler(handler HandlerEdit, color string) {
+	anyH := NewEditHandler(handler, color)
 	f := &field{
 		handler:   anyH,
 		parentTab: ts,
@@ -123,8 +121,8 @@ func (ts *tabSection) registerEditHandler(handler HandlerEdit, timeout time.Dura
 	ts.registerShortcutsIfSupported(handler, len(ts.fieldHandlers)-1)
 }
 
-func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, timeout time.Duration, color string) {
-	anyH := NewExecutionHandler(handler, timeout, color)
+func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, color string) {
+	anyH := NewExecutionHandler(handler, color)
 	f := &field{
 		handler:   anyH,
 		parentTab: ts,
@@ -132,8 +130,8 @@ func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, timeout
 	ts.addFields(f)
 }
 
-func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, timeout time.Duration, color string) {
-	anyH := NewInteractiveHandler(handler, timeout, color)
+func (ts *tabSection) registerInteractiveHandler(handler HandlerInteractive, color string) {
+	anyH := NewInteractiveHandler(handler, color)
 	f := &field{
 		handler:   anyH,
 		parentTab: ts,

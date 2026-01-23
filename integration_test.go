@@ -29,9 +29,9 @@ func TestRealWorldScenario(t *testing.T) {
 	emailHandler := NewTestEditableHandler("Email", "")
 
 	tab := tui.NewTabSection("Datos personales", "Información básica")
-	tui.AddHandler(nombreHandler, 0, "", tab)
-	tui.AddHandler(edadHandler, 0, "", tab)
-	tui.AddHandler(emailHandler, 0, "", tab)
+	tui.AddHandler(nombreHandler, "", tab)
+	tui.AddHandler(edadHandler, "", tab)
+	tui.AddHandler(emailHandler, "", tab)
 
 	// Asegurarnos de que no hay panic durante la inicialización
 	defer func() {

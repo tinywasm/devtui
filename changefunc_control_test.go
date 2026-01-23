@@ -17,7 +17,7 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 		h := DefaultTUIForTest()
 		// Create a test tab and add the handler using new API
 		tab := h.NewTabSection("Test Tab", "Test description")
-		h.AddHandler(customHandler, 0, "", tab)
+		h.AddHandler(customHandler, "", tab)
 
 		h.viewport.Width = 80
 		h.viewport.Height = 24
@@ -62,7 +62,7 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 		h := DefaultTUIForTest(func(messages ...any) {})
 		// Create a test tab and add the handler using new API
 		tab := h.NewTabSection("Test Tab", "Test description")
-		h.AddHandler(customHandler, 0, "", tab)
+		h.AddHandler(customHandler, "", tab)
 
 		h.viewport.Width = 80
 		h.viewport.Height = 24
@@ -102,7 +102,7 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 		h := DefaultTUIForTest(func(messages ...any) {})
 		// Create a test tab and add the handler using new API
 		tab := h.NewTabSection("Test Tab", "Test description")
-		h.AddHandler(customHandler, 0, "", tab)
+		h.AddHandler(customHandler, "", tab)
 
 		h.viewport.Width = 80
 		h.viewport.Height = 24

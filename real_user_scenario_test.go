@@ -19,7 +19,7 @@ func TestRealUserScenario(t *testing.T) {
 
 		// Configure tab exactly like main.go
 		serverTab := tui.NewTabSection("Server", "Server configuration")
-		tui.AddHandler(portHandler, 0, "", serverTab)
+		tui.AddHandler(portHandler, "", serverTab)
 
 		// Initialize viewport
 		tui.viewport.Width = 80
@@ -111,7 +111,7 @@ func TestRealUserScenario(t *testing.T) {
 
 		portHandler := &PortTestHandler{currentPort: "8080"}
 		serverTab := tui.NewTabSection("Server", "Server configuration")
-		tui.AddHandler(portHandler, 0, "", serverTab)
+		tui.AddHandler(portHandler, "", serverTab)
 
 		tui.viewport.Width = 80
 		tui.viewport.Height = 24

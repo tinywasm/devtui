@@ -2,7 +2,6 @@ package devtui
 
 import (
 	"testing"
-	"time"
 )
 
 func TestValidateTabSection_Nil(t *testing.T) {
@@ -14,7 +13,7 @@ func TestValidateTabSection_Nil(t *testing.T) {
 		}
 	}()
 
-	tui.AddHandler(&validationTestHandler{}, time.Second, "", nil)
+	tui.AddHandler(&validationTestHandler{}, "", nil)
 }
 
 func TestValidateTabSection_WrongType(t *testing.T) {
@@ -26,7 +25,7 @@ func TestValidateTabSection_WrongType(t *testing.T) {
 		}
 	}()
 
-	tui.AddHandler(&validationTestHandler{}, time.Second, "", "not a tabSection")
+	tui.AddHandler(&validationTestHandler{}, "", "not a tabSection")
 }
 
 func TestValidateTabSection_WrongDevTUI(t *testing.T) {
@@ -41,7 +40,7 @@ func TestValidateTabSection_WrongDevTUI(t *testing.T) {
 		}
 	}()
 
-	tui2.AddHandler(&validationTestHandler{}, time.Second, "", tab)
+	tui2.AddHandler(&validationTestHandler{}, "", tab)
 }
 
 func (h *validationTestDisplayHandler) Content() string {
@@ -53,11 +52,11 @@ func TestValidateTabSection_Success(t *testing.T) {
 	tab := tui.NewTabSection("TEST", "test")
 
 	// Should not panic
-	tui.AddHandler(&validationTestDisplayHandler{name: "test"}, 0, "", tab)
+	tui.AddHandler(&validationTestDisplayHandler{name: "test"}, "", tab)
 
 	// Loggable handlers are registered via AddHandler
 	h := &validationTestLoggableHandler{name: "logger"}
-	tui.AddHandler(h, 0, "", tab)
+	tui.AddHandler(h, "", tab)
 
 	if h.logFunc == nil {
 		t.Error("Expected logger function to be injected, got nil")

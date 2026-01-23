@@ -28,7 +28,7 @@ func TestUIDisplayBug(t *testing.T) {
 		// Create port handler with initial value "433" (like in the image)
 		portHandler := &PortTestHandler{currentPort: "433"}
 		tab := tui.NewTabSection("Server", "Server configuration")
-		tui.AddHandler(portHandler, 0, "", tab)
+		tui.AddHandler(portHandler, "", tab)
 
 		// Initialize viewport
 		tui.viewport.Width = 80
@@ -111,7 +111,7 @@ func TestUIDisplayBug(t *testing.T) {
 		tui := NewTUI(config)
 		portHandler := &PortTestHandler{currentPort: "433"}
 		tab := tui.NewTabSection("Server", "Config")
-		tui.AddHandler(portHandler, 0, "", tab)
+		tui.AddHandler(portHandler, "", tab)
 
 		tui.viewport.Width = 80
 		tui.viewport.Height = 24

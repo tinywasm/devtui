@@ -15,7 +15,7 @@ func TestEmptyFieldEnterBehavior(t *testing.T) {
 
 		// Create test tab and register handler
 		tab := h.NewTabSection("Test Tab", "Test description")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Initialize viewport
 		h.viewport.Width = 80
@@ -77,7 +77,7 @@ func TestEmptyFieldEnterBehavior(t *testing.T) {
 
 		// Create test tab and register handler
 		tab := h.NewTabSection("Test Tab", "Test description")
-		h.AddHandler(customHandler, 0, "", tab)
+		h.AddHandler(customHandler, "", tab)
 
 		h.viewport.Width = 80
 		h.viewport.Height = 24

@@ -183,7 +183,7 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		chatHandler := &example.SimpleChatHandler{}
 
 		chatTab := tui.NewTabSection("Chat", "AI Chat Assistant")
-		tui.AddHandler(chatHandler, 5*time.Second, "", chatTab)
+		tui.AddHandler(chatHandler, "", chatTab)
 
 		tui.viewport.Width = 80
 		tui.viewport.Height = 24

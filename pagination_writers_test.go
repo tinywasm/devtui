@@ -18,7 +18,7 @@ func TestPaginationWritersOnlyTab(t *testing.T) {
 	logs := h.NewTabSection("Logs", "System Logs")
 
 	h.activeTab = 0
-	h.AddHandler(&SystemLogWriter{name: "SystemLog"}, 0, "", logs)
+	h.AddHandler(&SystemLogWriter{name: "SystemLog"}, "", logs)
 
 	// Call the real footerView rendering logic
 	output := h.footerView()

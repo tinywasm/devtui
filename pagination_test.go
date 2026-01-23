@@ -63,7 +63,7 @@ func TestPaginationDisplay(t *testing.T) {
 		h.TabSections = h.TabSections[:0]
 		tab := h.NewTabSection("TestTab", "desc")
 		for i := 0; i < tc.totalFields; i++ {
-			h.AddHandler(NewTestEditableHandler(fmt.Sprintf("Field%d", i), "val"), 0, "", tab)
+			h.AddHandler(NewTestEditableHandler(fmt.Sprintf("Field%d", i), "val"), "", tab)
 		}
 		h.activeTab = 0
 		tabSection := tab.(*tabSection)

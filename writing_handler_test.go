@@ -30,7 +30,7 @@ func TestWriterHandlerRegistration(t *testing.T) {
 	loggable := &testLoggable{name: "TestWriter"}
 
 	// Register via AddHandler
-	h.AddHandler(loggable, 0, "", tab)
+	h.AddHandler(loggable, "", tab)
 
 	if loggable.logFunc == nil {
 		t.Fatal("AddHandler should inject logger into Loggable handler")
@@ -52,7 +52,7 @@ func TestHandlerLoggerFunctionality(t *testing.T) {
 
 	// Register
 	loggable := &testLoggable{name: "TestWriter"}
-	h.AddHandler(loggable, 0, "", tab)
+	h.AddHandler(loggable, "", tab)
 
 	// Call it
 	testMessage := "Test message from handler"
@@ -77,7 +77,7 @@ func TestAutomaticTracking(t *testing.T) {
 
 	// Register
 	loggable := &testLoggable{name: "TrackerWriter"}
-	h.AddHandler(loggable, 0, "", tab)
+	h.AddHandler(loggable, "", tab)
 
 	// Write messages - should update
 	loggable.logFunc("First")
@@ -108,8 +108,8 @@ func TestMultipleHandlersInSameTab(t *testing.T) {
 	// Register both handlers
 	l1 := &testLoggable{name: "W1"}
 	l2 := &testLoggable{name: "W2"}
-	h.AddHandler(l1, 0, "", tab)
-	h.AddHandler(l2, 0, "", tab)
+	h.AddHandler(l1, "", tab)
+	h.AddHandler(l2, "", tab)
 
 	// Write messages from both handlers
 	l1.logFunc("From W1")
@@ -141,7 +141,7 @@ func TestMessageTypeDetection(t *testing.T) {
 
 	// Register
 	loggable := &testLoggable{name: "TestWriter"}
-	h.AddHandler(loggable, 0, "", tab)
+	h.AddHandler(loggable, "", tab)
 
 	// Test different message types
 	testCases := []struct {

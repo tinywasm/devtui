@@ -39,12 +39,12 @@ func main() {
 
 	// Dashboard tab with DisplayHandlers (read-only information)
 	dashboard := tui.NewTabSection("Dashboard", "System Overview")
-	tui.AddHandler(&example.StatusHandler{}, 0, "", dashboard)
+	tui.AddHandler(&example.StatusHandler{}, "", dashboard)
 
 	// Configuration tab with EditHandlers (interactive fields)
 	config := tui.NewTabSection("Config", "System Configuration")
-	tui.AddHandler(&example.DatabaseHandler{ConnectionString: "postgres://localhost:5432/mydb"}, 2*time.Second, "", config)
-	tui.AddHandler(&example.BackupHandler{}, 5*time.Second, "", config)
+	tui.AddHandler(&example.DatabaseHandler{ConnectionString: "postgres://localhost:5432/mydb"}, "", config)
+	tui.AddHandler(&example.BackupHandler{}, "", config)
 
 	// NEW: Chat tab with InteractiveHandler - Demonstrates interactive content management
 	chat := tui.NewTabSection("Chat", "AI Chat Assistant")
@@ -53,7 +53,7 @@ func main() {
 		WaitingForUserFlag: false, // Start showing content, not waiting for input
 		IsProcessing:       false, // Not processing initially
 	}
-	tui.AddHandler(chatHandler, 3*time.Second, "", chat)
+	tui.AddHandler(chatHandler, "", chat)
 
 	// Logging tab with Writers
 	logs := tui.NewTabSection("Logs", "System Logs")
@@ -62,8 +62,8 @@ func main() {
 	systemLog := &SimpleLogger{name: "SystemLog"}
 	opLog := &SimpleLogger{name: "OpLog"}
 
-	tui.AddHandler(systemLog, 0, "", logs)
-	tui.AddHandler(opLog, 0, "", logs)
+	tui.AddHandler(systemLog, "", logs)
+	tui.AddHandler(opLog, "", logs)
 
 	systemLog.Log("System initialized")
 	systemLog.Log("API demo started")
@@ -87,11 +87,7 @@ func main() {
 		}
 	}()
 
-	// Different timeout configurations:
-	// - Synchronous (default): .Register() or timeout = 0
-	// - Asynchronous with timeout: .WithTimeout(duration)
-	// - Example timeouts: 100*time.Millisecond, 2*time.Second, 1*time.Minute
-	// - Tip: Keep timeouts reasonable (2-10 seconds) for good UX
+	// Tip: Keep timeouts reasonable (2-10 seconds) for good UX
 
 	// Handler Types Summary:
 	// • HandlerDisplay: Name() + Content() - Shows immediate content

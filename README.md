@@ -17,7 +17,7 @@ Define this in your application to use DevTUI:
 ```go
 type TuiInterface interface {
     NewTabSection(title, description string) any
-    AddHandler(handler any, timeout time.Duration, color string, tabSection any)
+    AddHandler(handler any, color string, tabSection any)
     RemoveTabSection(section any) // Dynamic removal
     Start(args ...any)            // Optional *sync.WaitGroup support
     RefreshUI()
@@ -35,7 +35,7 @@ func main() {
     ops := tui.NewTabSection("Operations", "System Tasks")
     
     // 2. Add handlers (DevTUI detects implemented interfaces automatically)
-    tui.AddHandler(&MyHandler{}, 5*time.Second, "#10b981", ops)
+    tui.AddHandler(&MyHandler{}, "#10b981", ops)
 
     // 3. Optional: Remove section dynamically
     // tui.RemoveTabSection(ops)

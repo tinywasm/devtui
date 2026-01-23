@@ -20,7 +20,7 @@ func TestInputBackgroundConsistency(t *testing.T) {
 	tab := h.TabSections[h.activeTab]
 	tab.setFieldHandlers([]*field{})
 	testHandler := NewTestEditableHandler("Path", "myapp")
-	h.AddHandler(testHandler, 0, "", tab)
+	h.AddHandler(testHandler, "", tab)
 
 	f := tab.fieldHandlers[0]
 	f.setTempEditValueForTest("myapp")
@@ -54,7 +54,7 @@ func TestInputWidthInEditMode(t *testing.T) {
 	tab := h.TabSections[h.activeTab]
 	tab.setFieldHandlers([]*field{})
 	testHandler := NewTestEditableHandler("Path", "myapp")
-	h.AddHandler(testHandler, 0, "", tab)
+	h.AddHandler(testHandler, "", tab)
 
 	f := tab.fieldHandlers[0]
 	f.setTempEditValueForTest("myapp")
@@ -86,7 +86,7 @@ func TestCursorBlinkSingleColor(t *testing.T) {
 	tab := h.TabSections[h.activeTab]
 	tab.setFieldHandlers([]*field{})
 	testHandler := NewTestEditableHandler("Path", "myapp")
-	h.AddHandler(testHandler, 0, "", tab)
+	h.AddHandler(testHandler, "", tab)
 
 	f := tab.fieldHandlers[0]
 	f.setTempEditValueForTest("myapp")

@@ -24,7 +24,7 @@ func TestDynamicHandlerName(t *testing.T) {
 
 	handler := &DynamicHandler{name: "STEP 1"}
 	// AddHandler will register it as handlerTypeInteractive if it implements HandlerInteractive
-	tui.AddHandler(handler, 0, "", tab)
+	tui.AddHandler(handler, "", tab)
 
 	// Log with first name
 	handler.log("Message 1")

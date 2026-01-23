@@ -33,7 +33,7 @@ The `AddHandler` method is the single entry point for registering any component.
 
 ```go
 // Universal registration
-tui.AddHandler(myHandler, timeout, color, tabSection)
+tui.AddHandler(myHandler, color, tabSection)
 ```
 
 ## Logging & Tracking
@@ -67,7 +67,7 @@ The decoupled design makes testing your application trivial. You can mock the UI
 // Your code depends on this interface
 type UI interface {
     NewTabSection(title, description string) any
-    AddHandler(handler any, timeout time.Duration, color string, tabSection any)
+    AddHandler(handler any, color string, tabSection any)
 }
 ```
 

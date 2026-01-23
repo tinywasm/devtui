@@ -17,7 +17,7 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 		// Add a custom port handler to the existing TUI
 		portHandler := &PortTestHandler{currentPort: "8080"}
 		serverTab := tui.NewTabSection("Server", "Server configuration")
-		tui.AddHandler(portHandler, 0, "", serverTab)
+		tui.AddHandler(portHandler, "", serverTab)
 
 		// Initialize viewport
 		tui.viewport.Width = 80
@@ -152,7 +152,7 @@ func TestDisplayedValueInUI(t *testing.T) {
 		portHandler := &PortTestHandler{currentPort: "8080"}
 		serverTab := tui.NewTabSection("Server", "Server configuration")
 		// Pass the handler and a duration (e.g., 0 for no delay)
-		tui.AddHandler(portHandler, 0, "", serverTab)
+		tui.AddHandler(portHandler, "", serverTab)
 
 		tui.viewport.Width = 80
 		tui.viewport.Height = 24

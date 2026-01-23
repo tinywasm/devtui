@@ -46,7 +46,7 @@ func TestFooterView(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("TestLabel", "TestValue Rendered")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Set viewport width for proper layout calculation
 		h.viewport.Width = 80
@@ -76,7 +76,7 @@ func TestRenderFooterInput(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "test value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Set viewport width for proper layout calculation
 		h.viewport.Width = 80
@@ -116,7 +116,7 @@ func TestRenderFooterInput(t *testing.T) {
 
 		// Crear explícitamente un handler no editable (ExecutionHandler)
 		testHandler := NewTestNonEditableHandler("Test", "Value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		h.editModeActivated = true
 		h.TabSections[h.activeTab].indexActiveEditField = 0
@@ -141,7 +141,7 @@ func TestRenderFooterInput(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestNonEditableHandler(expectedLabel, "Some Value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Set viewport width for proper layout calculation
 		h.viewport.Width = 80
@@ -167,7 +167,7 @@ func TestRenderFooterInput(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 		h.TabSections[h.activeTab].indexActiveEditField = 0
 		h.editModeActivated = false // No en modo edición
 
@@ -204,9 +204,9 @@ func TestInputNavigation(t *testing.T) {
 	testHandler1 := NewTestEditableHandler("Field1", "Value1")
 	testHandler2 := NewTestEditableHandler("Field2", "Value2")
 	testHandler3 := NewTestEditableHandler("Field3", "Value3")
-	h.AddHandler(testHandler1, 0, "", tab)
-	h.AddHandler(testHandler2, 0, "", tab)
-	h.AddHandler(testHandler3, 0, "", tab)
+	h.AddHandler(testHandler1, "", tab)
+	h.AddHandler(testHandler2, "", tab)
+	h.AddHandler(testHandler3, "", tab)
 	h.TabSections[h.activeTab].indexActiveEditField = 0
 	h.editModeActivated = false
 
@@ -268,7 +268,7 @@ func TestInputNavigation(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Asegurar que no estamos en modo edición
 		h.editModeActivated = false
@@ -293,7 +293,7 @@ func TestInputNavigation(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Asegurar que estamos en modo edición
 		h.editModeActivated = true
@@ -316,7 +316,7 @@ func TestInputNavigation(t *testing.T) {
 		tab := h.TabSections[h.activeTab]
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value1")
-		h.AddHandler(testHandler, 0, "", tab)
+		h.AddHandler(testHandler, "", tab)
 
 		// Configurar para edición
 		h.editModeActivated = true
@@ -357,7 +357,7 @@ func TestCursorNoExtraSpace(t *testing.T) {
 	// Texto original tiene largo 5
 	originalText := "value"
 	testHandler := NewTestEditableHandler("Test", originalText)
-	h.AddHandler(testHandler, 0, "", tab)
+	h.AddHandler(testHandler, "", tab)
 
 	f := tab.fieldHandlers[0]
 	f.setTempEditValueForTest(originalText)
@@ -391,7 +391,7 @@ func TestCursorNoTrail(t *testing.T) {
 	tab := h.TabSections[h.activeTab]
 	tab.setFieldHandlers([]*field{})
 	testHandler := NewTestEditableHandler("Path", "abcdef")
-	h.AddHandler(testHandler, 0, "", tab)
+	h.AddHandler(testHandler, "", tab)
 
 	f := tab.fieldHandlers[0]
 	f.setTempEditValueForTest("abcdef")
