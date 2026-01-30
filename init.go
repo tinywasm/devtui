@@ -62,6 +62,7 @@ func (h *DevTUI) cursorTick() tea.Cmd {
 type TuiConfig struct {
 	AppName  string    // app name eg: "MyApp"
 	ExitChan chan bool //  global chan to close app eg: make(chan bool)
+	Debug    bool      // NEW: Enable debug mode for unfiltered logs
 	/*// *ColorPalette style for the TUI
 	  // if nil it will use default style:
 	type ColorPalette struct {

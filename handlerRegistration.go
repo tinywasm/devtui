@@ -158,6 +158,12 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 		showAll = streamer.AlwaysShowAllLogs()
 	}
 
+	// NEW: Override showAll if strictly in Debug mode from config
+	// This forces all logs to be displayed without collapsing
+	if ts.tui.Debug {
+		showAll = true
+	}
+
 	// Create anyHandler for tracking
 	anyH := &anyHandler{
 		handlerType:  hType, // Use detected type
