@@ -2,51 +2,16 @@ package devtui
 
 import (
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/mcpserve"
 )
 
 const (
 	MCPToolName = "app_get_logs"
 )
 
-// ToolExecutor defines how a tool should be executed
-type ToolExecutor func(args map[string]any)
-
-// Name implements Loggable interface for MCP integration
-func (d *DevTUI) Name() string {
-	return "DEVTUI"
-}
-
-// SetLog implements Loggable interface for MCP integration
-// This allows mcpserve to inject a capturing logger
-func (d *DevTUI) SetLog(log func(message ...any)) {
-	// Store in separate field to avoid interfering with TUI's Logger
-	d.mcpLogger = log
-}
-
-// MCPToolMetadata provides MCP tool configuration metadata.
-// Fields must match mcpserve.ToolMetadata for reflection compatibility.
-// DevTUI does NOT import mcpserve to maintain decoupling.
-type MCPToolMetadata struct {
-	Name        string
-	Description string
-	Parameters  []MCPParameterMetadata
-	Execute     ToolExecutor // Changed from 2-param to 1-param signature to match client pattern
-}
-
-// MCPParameterMetadata describes a tool parameter.
-// Fields must match mcpserve.ParameterMetadata for reflection compatibility.
-type MCPParameterMetadata struct {
-	Name        string
-	Description string
-	Required    bool
-	Type        string // "string", "number", "boolean"
-	EnumValues  []string
-	Default     any
-}
-
 // GetMCPToolsMetadata returns MCP tools provided by DevTUI.
-// This method is called via reflection by mcpserve to discover tools.
-func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
+// This method is called by mcpserve to discover tools.
+func (d *DevTUI) GetMCPToolsMetadata() []mcpserve.ToolMetadata {
 	// Get available section titles for enum and description
 	sectionTitles := d.getSectionTitles()
 
@@ -62,11 +27,11 @@ func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
 	}
 	description += ". Pass empty section parameter to list sections with descriptions."
 
-	return []MCPToolMetadata{
+	return []mcpserve.ToolMetadata{
 		{
 			Name:        MCPToolName,
 			Description: description,
-			Parameters: []MCPParameterMetadata{
+			Parameters: []mcpserve.ParameterMetadata{
 				{
 					Name:        "section",
 					Description: "Section name to get logs from (e.g., BUILD, DEPLOY). Leave empty to list all available sections.",
@@ -79,6 +44,18 @@ func (d *DevTUI) GetMCPToolsMetadata() []MCPToolMetadata {
 			Execute: d.mcpGetSectionLogs,
 		},
 	}
+}
+
+// Name implements Loggable interface for MCP integration
+func (d *DevTUI) Name() string {
+	return "DEVTUI"
+}
+
+// SetLog implements Loggable interface for MCP integration
+// This allows mcpserve to inject a capturing logger
+func (d *DevTUI) SetLog(log func(message ...any)) {
+	// Store in separate field to avoid interfering with TUI's Logger
+	d.mcpLogger = log
 }
 
 // getSectionTitles returns all registered section titles
