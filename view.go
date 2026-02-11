@@ -109,13 +109,34 @@ func (h *DevTUI) headerView() string {
 	tab := h.TabSections[h.activeTab]
 
 	// Truncar el título si es necesario
-	headerText := h.AppName + "/" + tab.title
-	// Use UIColumnWidth to match the full left column width (Footer: Pagination + Label)
-	truncatedHeader := Convert(headerText).Truncate(UIColumnWidth, 0).String()
+	leftText := h.AppName + "/" + tab.title
+	rightText := ""
+	if h.AppVersion != "" {
+		rightText = h.AppVersion
+	}
+
+	// Calculate available space in UIColumnWidth
+	rightWidth := lipgloss.Width(rightText)
+	// Truncate left side if necessary (leave at least 1 space if version exists)
+	maxLeftWidth := UIColumnWidth
+	if rightWidth > 0 {
+		maxLeftWidth = UIColumnWidth - rightWidth - 1
+	}
+	if maxLeftWidth < 0 {
+		maxLeftWidth = 0
+	}
+
+	truncatedLeft := Convert(leftText).Truncate(maxLeftWidth, 0).String()
+	numSpaces := UIColumnWidth - lipgloss.Width(truncatedLeft) - rightWidth
+	if numSpaces < 0 {
+		numSpaces = 0
+	}
+
+	combinedHeader := truncatedLeft + Convert(" ").Repeat(numSpaces).String() + rightText
 
 	// Aplicar el estilo base para garantizar un ancho fijo
 	// Use UIColumnWidth to match the full left column width
-	fixedWidthHeader := lipgloss.NewStyle().Width(UIColumnWidth).Align(lipgloss.Left).Render(truncatedHeader)
+	fixedWidthHeader := lipgloss.NewStyle().Width(UIColumnWidth).Align(lipgloss.Left).Render(combinedHeader)
 
 	// Aplicar el estilo visual manteniendo el ancho fijo
 	title := h.headerTitleStyle.Render(fixedWidthHeader)
