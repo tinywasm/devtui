@@ -33,7 +33,7 @@ func (h *shortcutsInteractiveHandler) Name() string {
 }
 
 func (h *shortcutsInteractiveHandler) Label() string {
-	return Translate(D.Language, ":").String()
+	return Translate("language", ":").String()
 }
 
 // MessageTracker implementation for operation tracking
@@ -73,36 +73,31 @@ func (h *shortcutsInteractiveHandler) WaitingForUser() bool {
 
 // generateHelpContent creates the help content string
 func (h *shortcutsInteractiveHandler) generateHelpContent() string {
-	content := Translate(h.appName, D.Shortcuts, D.Keyboard, `:
-
-`, D.Content, D.Tab, `:
-  • Tab/Shift+Tab  -`, D.Switch, D.Content, `
-
-`, D.Fields, `:
-  • `, D.Arrow, D.Left, `/`, D.Right, `     -`, D.Switch, D.Field, `
-  • Enter          				-`, D.Edit, `/`, D.Execute, `
-  • Esc            				-`, D.Cancel, `
-
-`, D.Edit, D.Text, `:
-  • `, D.Arrow, D.Left, `/`, D.Right, `   -`, D.Move, `cursor
-  • Backspace      			-`, D.Create, D.Space, `
+	content := Translate(h.appName, "shortcuts", "keyboard", `:`+"\n\n",
+		"content", "tab", `:
+  • Tab/Shift+Tab  -`, "switch", "content", "\n\n",
+		"fields", `:
+  • `, "arrow", "left", `/`, "right", `     -`, "switch", "field", `
+  • Enter          				-`, "edit", `/`, "execute", `
+  • Esc            				-`, "cancel", "\n\n",
+		"edit", "text", `:
+  • `, "arrow", "left", `/`, "right", `   -`, "move", `cursor
+  • Backspace      			-`, "create", "space", `
 
 Viewport:
-  • `, D.Arrow, D.Up, "/", D.Down, `    - Scroll`, D.Line, D.Text, `
-  • PgUp/PgDown    		- Scroll`, D.Page, `
-  • Mouse Wheel    		- Scroll`, D.Page, `
-
-Scroll `, D.Status, D.Icons, `:
-  •  ■  - `, D.All, D.Content, D.Visible, `
-  •  ▼  - `, D.Can, `scroll`, D.Down, `
-  •  ▲  - `, D.Can, `scroll`, D.Up, `
-  • ▼ ▲ - `, D.Can, `scroll`, D.Down, `/`, D.Up, `
-
-`, D.Quit, `:
-  • Ctrl+C         - `, D.Quit, `
+  • `, "arrow", "up", "/", "down", `    - Scroll`, "line", "text", `
+  • PgUp/PgDown    		- Scroll`, "page", `
+  • Mouse Wheel    		- Scroll`, "page", "\n\n",
+		`Scroll `, "status", "icons", `:
+  •  ■  - `, "all", "content", "visible", `
+  •  ▼  - `, "can", `scroll`, "down", `
+  •  ▲  - `, "can", `scroll`, "up", `
+  • ▼ ▲ - `, "can", `scroll`, "down", `/`, "up", "\n\n",
+		"quit", `:
+  • Ctrl+C         - `, "quit", `
 `).String()
 
-	// NEW: Add registered shortcuts section
+	// Add registered shortcuts section
 	if h.tui != nil && h.tui.shortcutRegistry != nil {
 		shortcuts := h.getRegisteredShortcuts()
 		if len(shortcuts) > 0 {
@@ -113,7 +108,7 @@ Scroll `, D.Status, D.Icons, `:
 		}
 	}
 
-	content += "\n" + Translate(D.Language, D.Supported, `: en, es, zh, hi, ar, pt, fr, de, ru`).String()
+	content += "\n" + Translate("language", "supported", `: en, es, zh, hi, ar, pt, fr, de, ru`).String()
 	return content
 }
 
