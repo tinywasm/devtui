@@ -1,24 +1,24 @@
 ```mermaid
 sequenceDiagram
-    participant Dev as Desarrollador
+    participant Dev as Developer
     participant Bubble as devtui (Bubbletea)
     participant SSEClient as devtui/SSE
     participant MCPServer as MCP Daemon (3030)
 
-    %% Inicio del Streaming %%
-    Dev->>Bubble: Inicia devtui(ClientMode)
-    Bubble->>SSEClient: Inicia `tinywasm/sse.Client`
-    SSEClient->>MCPServer: Petición GET `/logs`
+    %% Streaming Start %%
+    Dev->>Bubble: Start devtui(ClientMode)
+    Bubble->>SSEClient: Start `tinywasm/sse.Client`
+    SSEClient->>MCPServer: Request GET `/logs`
     MCPServer-->>SSEClient: Push Data (JSON)
-    SSEClient->>Bubble: Encola `tabContent`
-    Bubble-->>Dev: Renderiza Logs Visibles
+    SSEClient->>Bubble: Enqueue `tabContent`
+    Bubble-->>Dev: Render Visible Logs
 
-    %% Interacción del teclado %%
-    Dev->>Bubble: Presiona tecla 'r'
+    %% Keyboard Interaction %%
+    Dev->>Bubble: Press key 'r'
     Bubble->>MCPServer: HTTP POST `/action?key=r`
-    MCPServer-->>Bubble: HTTP 200 OK (Recargando backend)
+    MCPServer-->>Bubble: HTTP 200 OK (Reloading backend)
     
-    %% Salida Local %%
-    Dev->>Bubble: Presiona `Ctrl+C`
-    Bubble->>Dev: Cierra la Interfaz (Quit tea)
+    %% Local Exit %%
+    Dev->>Bubble: Press `Ctrl+C`
+    Bubble->>Dev: Close Interface (Quit tea)
 ```

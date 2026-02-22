@@ -21,10 +21,10 @@
 ## 1. Objective
 Refactor `tinywasm/devtui` to support two modes of execution: Headless (generating logs but not rendering) and Client (reading logs from SSE and rendering).
 
-**IMPORTANT RECOVERY PROCEDURE**: Before implementing these changes, MUST create a git recovery branch (e.g., `git checkout -b refactor-mcp-daemon`).
+**IMPORTANT RECOVERY PROCEDURE**: Before implementing these changes, you MUST create a git recovery branch (e.g., `git checkout -b refactor-mcp-daemon`).
 
 ## 2. Sequence Flow
-See [MCP_REFACTOR_FLOW.md](diagrams/MCP_REFACTOR_FLOW.md) for the exact execution paths.
+See [MCP_REFACTOR_FLOW.md](diagrams/MCP_REFACTOR_FLOW.md) for precise execution paths.
 
 ## 3. Precise Code Changes
 
