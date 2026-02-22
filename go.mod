@@ -26,6 +26,7 @@ require (
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
+	github.com/tinywasm/sse v0.0.10 // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
@@ -43,7 +44,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/tinywasm/mcpserve v0.0.20
+	github.com/tinywasm/mcpserve v0.0.21
 	github.com/tinywasm/unixid v0.2.22
 	golang.org/x/sys v0.39.0 // indirect
 )
