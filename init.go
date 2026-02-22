@@ -75,6 +75,9 @@ type TuiConfig struct {
 	Color *ColorPalette
 
 	Logger func(messages ...any) // function to write log error
+
+	ClientMode bool   // true if it should listen to SSE
+	ClientURL  string // e.g. http://localhost:3030/logs
 }
 
 // NewTUI creates a new DevTUI instance and initializes it.
@@ -120,6 +123,10 @@ func NewTUI(c *TuiConfig) *DevTUI {
 	// FIXED: Removed manual content sending to prevent duplication
 	// HandlerDisplay automatically shows Content() when field is selected
 	// No need for manual sendMessageWithHandler() call
+
+	if c.ClientMode && c.ClientURL != "" {
+		go tui.startSSEClient(c.ClientURL)
+	}
 
 	tui.tea = tea.NewProgram(tui,
 		tea.WithAltScreen(), // use the full size of the terminal in its "alternate screen buffer"
