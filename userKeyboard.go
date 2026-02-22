@@ -199,11 +199,13 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 	case tea.KeyTab: // cambiar tabSection
 		h.activeTab = (h.activeTab + 1) % len(h.TabSections)
+		h.notifyTabActive(h.activeTab)
 		h.updateViewport()
 		h.checkAndTriggerInteractiveContent() // NEW: Auto-trigger content for interactive handlers
 
 	case tea.KeyShiftTab: // cambiar tabSection
 		h.activeTab = (h.activeTab - 1 + len(h.TabSections)) % len(h.TabSections)
+		h.notifyTabActive(h.activeTab)
 		h.updateViewport()
 		h.checkAndTriggerInteractiveContent() // NEW: Auto-trigger content for interactive handlers
 
@@ -295,6 +297,7 @@ func (h *DevTUI) executeShortcut(entry *ShortcutEntry) (bool, tea.Cmd) {
 	// Navigate to target tab if not already there
 	if h.activeTab != entry.TabIndex {
 		h.activeTab = entry.TabIndex
+		h.notifyTabActive(h.activeTab)
 	}
 
 	// Set active field

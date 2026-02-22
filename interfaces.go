@@ -47,6 +47,13 @@ type Cancelable interface {
 	Cancel() // Called when user presses ESC to exit interactive mode
 }
 
+// TabAware defines the optional interface for handlers that want to be notified
+// when their tab becomes active. This is useful for lazy initialization or
+// delayed logging that requires the DevTUI logger to be injected first.
+type TabAware interface {
+	OnTabActive()
+}
+
 // Loggable defines optional logging capability for handlers.
 // Handlers implementing this receive a logger function from DevTUI
 // when registered via AddHandler.

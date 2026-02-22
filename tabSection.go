@@ -179,8 +179,47 @@ func (t *DevTUI) SetActiveTab(section any) {
 	for i, ts := range t.TabSections {
 		if ts == tab {
 			t.activeTab = i
+			t.notifyTabActive(i) // Notify handlers that tab is now active
 			t.RefreshUI()
 			return
+		}
+	}
+}
+
+// notifyTabActive notifies all handlers in the specified tab that it has become active.
+// Used for lazy execution or logging that requires the screen logger to be present.
+func (t *DevTUI) notifyTabActive(tabIndex int) {
+	if tabIndex < 0 || tabIndex >= len(t.TabSections) {
+		return
+	}
+
+	tab := t.TabSections[tabIndex]
+	tab.mu.RLock()
+	defer tab.mu.RUnlock()
+
+	notified := make(map[any]bool)
+
+	// Notify all field handlers
+	for _, f := range tab.fieldHandlers {
+		if f.handler != nil && f.handler.origHandler != nil {
+			if aware, ok := f.handler.origHandler.(TabAware); ok {
+				if !notified[aware] {
+					notified[aware] = true
+					go aware.OnTabActive()
+				}
+			}
+		}
+	}
+
+	// Notify all writing-only handlers
+	for _, h := range tab.writingHandlers {
+		if h.origHandler != nil {
+			if aware, ok := h.origHandler.(TabAware); ok {
+				if !notified[aware] {
+					notified[aware] = true
+					go aware.OnTabActive()
+				}
+			}
 		}
 	}
 }

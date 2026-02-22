@@ -169,6 +169,7 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 		handlerType:  hType, // Use detected type
 		nameFunc:     handler.Name,
 		handlerColor: color,
+		origHandler:  handler, // Store original handler for TabAware support
 	}
 
 	// Register in writing handlers

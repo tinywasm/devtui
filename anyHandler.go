@@ -122,6 +122,7 @@ func NewDisplayHandler(h HandlerDisplay, color string) *anyHandler {
 		valueFunc:    h.Content, // Content como Value para compatibilidad interna
 		contentFunc:  h.Content, // Solo Content()
 		editableFunc: func() bool { return false },
+		origHandler:  h,
 		handlerColor: color, // NEW: Store handler color
 	}
 }

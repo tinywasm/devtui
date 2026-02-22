@@ -163,6 +163,7 @@ func (h *DevTUI) Start(args ...any) {
 
 	// NEW: Trigger initial content display for interactive handlers
 	h.checkAndTriggerInteractiveContent()
+	h.notifyTabActive(h.activeTab)
 
 	if _, err := h.tea.Run(); err != nil {
 		os.Stdout.WriteString(fmt.Sprintf("Error running DevTUI: %v\n", err))
