@@ -124,10 +124,6 @@ func NewTUI(c *TuiConfig) *DevTUI {
 	// HandlerDisplay automatically shows Content() when field is selected
 	// No need for manual sendMessageWithHandler() call
 
-	if c.ClientMode && c.ClientURL != "" {
-		go tui.startSSEClient(c.ClientURL)
-	}
-
 	tui.tea = tea.NewProgram(tui,
 		tea.WithAltScreen(), // use the full size of the terminal in its "alternate screen buffer"
 		// Mouse support disabled to enable terminal text selection
@@ -138,6 +134,10 @@ func NewTUI(c *TuiConfig) *DevTUI {
 
 // Init initializes the terminal UI application.
 func (h *DevTUI) Init() tea.Cmd {
+	// Start SSE client here (sections must be registered before replay messages arrive)
+	if h.ClientMode && h.ClientURL != "" {
+		go h.startSSEClient(h.ClientURL)
+	}
 	return tea.Batch(
 		tea.EnterAltScreen,
 		h.listenToMessages(),
