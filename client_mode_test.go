@@ -45,6 +45,8 @@ func TestClientModeSSE(t *testing.T) {
 	}
 	tui := NewTUI(config)
 	tui.SetTestMode(true) // Ensure deterministic behavior if applicable
+	// Start SSE client manually (Init() does this normally, but tests don't call Init())
+	go tui.startSSEClient(config.ClientURL)
 
 	// Wait for message to arrive in channel
 	select {
