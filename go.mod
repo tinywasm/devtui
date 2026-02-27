@@ -35,7 +35,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/tinywasm/mcpserve v0.0.23
+	github.com/tinywasm/mcpserve v0.0.24
 	github.com/tinywasm/unixid v0.2.22
 	golang.org/x/sys v0.39.0 // indirect
 )
