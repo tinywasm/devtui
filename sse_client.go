@@ -136,13 +136,21 @@ func (h *DevTUI) startSSEClient(url string) {
 					operationID:    dto.OperationID,
 					isProgress:     dto.IsProgress,
 					isComplete:     dto.IsComplete,
-					handlerName:    dto.HandlerName,
-					RawHandlerName: dto.RawHandlerName,
+					handlerName:    padHandlerName(dto.HandlerName, HandlerNameWidth),
+					RawHandlerName: dto.HandlerName,
 					handlerColor:   dto.HandlerColor,
 					handlerType:    dto.HandlerType,
 				}
 
-				// Send to main loop
+				// CRITICAL: Add to section's tabContents so updateViewport() can render it
+				section.mu.Lock()
+				section.tabContents = append(section.tabContents, content)
+				if len(section.tabContents) > 500 {
+					section.tabContents = section.tabContents[len(section.tabContents)-500:]
+				}
+				section.mu.Unlock()
+
+				// Send to main loop for UI update
 				h.tabContentsChan <- content
 			}
 		}
