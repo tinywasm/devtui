@@ -46,6 +46,12 @@ func (d *DevTUI) GetMCPToolsMetadata() []mcpserve.ToolMetadata {
 	}
 }
 
+// GetHandlerStates returns nil — DevTUI is a client, not a state server.
+func (d *DevTUI) GetHandlerStates() []byte { return nil }
+
+// DispatchAction returns false — actions are forwarded to the daemon, not dispatched locally.
+func (d *DevTUI) DispatchAction(_, _ string) bool { return false }
+
 // Name implements Loggable interface for MCP integration
 func (d *DevTUI) Name() string {
 	return "DEVTUI"

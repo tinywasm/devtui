@@ -26,12 +26,21 @@ type tabContentDTO struct {
 	IsComplete     bool        `json:"is_complete"`
 }
 
+// actionBaseURL strips the /logs suffix from ClientURL to get the daemon base URL.
+// Used for both GET /state and POST /action requests.
+func (h *DevTUI) actionBaseURL() string {
+	return strings.TrimSuffix(h.ClientURL, "/logs")
+}
+
 // startSSEClient connects to the SSE endpoint and processes incoming logs
 func (h *DevTUI) startSSEClient(url string) {
 	// Ensure URL has protocol
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
 	}
+
+	// Fetch initial state snapshot before entering the retry loop
+	h.fetchAndReconstructState(h.actionBaseURL())
 
 	client := &http.Client{
 		Timeout: 0, // Infinite timeout for SSE
@@ -40,10 +49,6 @@ func (h *DevTUI) startSSEClient(url string) {
 	retryDelay := 1 * time.Second
 
 	for {
-		// Only run if channel is open (app is running)
-		// Note: reading from closed channel returns immediately, so checking if h.ExitChan is closed is tricky without blocking
-		// Instead we check if the context is done if we had one, or rely on read error when app closes
-		// But here we can check non-blocking read
 		select {
 		case <-h.ExitChan:
 			return
@@ -77,10 +82,10 @@ func (h *DevTUI) startSSEClient(url string) {
 		}
 
 		reader := bufio.NewReader(resp.Body)
+		var currentEvent string
 
 		// Process the stream
 		for {
-			// Check exit signal periodically or on error
 			select {
 			case <-h.ExitChan:
 				resp.Body.Close()
@@ -97,65 +102,115 @@ func (h *DevTUI) startSSEClient(url string) {
 			}
 
 			line = strings.TrimSpace(line)
-			if strings.HasPrefix(line, "data:") {
-				data := strings.TrimPrefix(line, "data:")
-				data = strings.TrimSpace(data)
 
+			if strings.HasPrefix(line, "event:") {
+				currentEvent = strings.TrimSpace(strings.TrimPrefix(line, "event:"))
+				continue
+			}
+
+			if strings.HasPrefix(line, "data:") {
+				data := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
 				if data == "" {
 					continue
 				}
-
-				var dto tabContentDTO
-				if err := json.Unmarshal([]byte(data), &dto); err != nil {
-					if h.Logger != nil {
-						h.Logger("Error unmarshalling SSE data:", err)
-					}
-					continue
+				switch currentEvent {
+				case "state":
+					h.handleStateEvent(data)
+				default: // "" or "log"
+					h.handleLogEvent(data)
 				}
-
-				// Find local section by title
-				var section *tabSection
-				for _, s := range h.TabSections {
-					if s.title == dto.TabTitle {
-						section = s
-						break
-					}
-				}
-
-				if section == nil {
-					continue
-				}
-
-				// Create internal content structure
-				content := tabContent{
-					Id:             dto.Id,
-					Timestamp:      dto.Timestamp,
-					Content:        dto.Content,
-					Type:           dto.Type,
-					tabSection:     section,
-					operationID:    dto.OperationID,
-					isProgress:     dto.IsProgress,
-					isComplete:     dto.IsComplete,
-					handlerName:    padHandlerName(dto.HandlerName, HandlerNameWidth),
-					RawHandlerName: dto.HandlerName,
-					handlerColor:   dto.HandlerColor,
-					handlerType:    dto.HandlerType,
-				}
-
-				// CRITICAL: Add to section's tabContents so updateViewport() can render it
-				section.mu.Lock()
-				section.tabContents = append(section.tabContents, content)
-				if len(section.tabContents) > 500 {
-					section.tabContents = section.tabContents[len(section.tabContents)-500:]
-				}
-				section.mu.Unlock()
-
-				// Send to main loop for UI update
-				h.tabContentsChan <- content
+				currentEvent = "" // reset after data line
 			}
 		}
 
 		resp.Body.Close()
 		time.Sleep(retryDelay)
+	}
+}
+
+// handleLogEvent processes a plain log SSE data line.
+func (h *DevTUI) handleLogEvent(data string) {
+	var dto tabContentDTO
+	if err := json.Unmarshal([]byte(data), &dto); err != nil {
+		if h.Logger != nil {
+			h.Logger("Error unmarshalling SSE data:", err)
+		}
+		return
+	}
+
+	var section *tabSection
+	for _, s := range h.TabSections {
+		if s.title == dto.TabTitle {
+			section = s
+			break
+		}
+	}
+	if section == nil {
+		return
+	}
+
+	content := tabContent{
+		Id:             dto.Id,
+		Timestamp:      dto.Timestamp,
+		Content:        dto.Content,
+		Type:           dto.Type,
+		tabSection:     section,
+		operationID:    dto.OperationID,
+		isProgress:     dto.IsProgress,
+		isComplete:     dto.IsComplete,
+		handlerName:    padHandlerName(dto.HandlerName, HandlerNameWidth),
+		RawHandlerName: dto.HandlerName,
+		handlerColor:   dto.HandlerColor,
+		handlerType:    dto.HandlerType,
+	}
+
+	section.mu.Lock()
+	section.tabContents = append(section.tabContents, content)
+	if len(section.tabContents) > 500 {
+		section.tabContents = section.tabContents[len(section.tabContents)-500:]
+	}
+	section.mu.Unlock()
+
+	h.tabContentsChan <- content
+}
+
+// handleStateEvent processes a live "event: state" SSE data line (Phase 2, no-op for now).
+func (h *DevTUI) handleStateEvent(data string) {
+	// Phase 2: unmarshal StateEntry and update matching remote field value.
+	// Currently a no-op — daemon does not yet push state events.
+}
+
+// fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers.
+// Degrades gracefully if /state is unavailable.
+func (h *DevTUI) fetchAndReconstructState(baseURL string) {
+	resp, err := http.Get(baseURL + "/state")
+	if err != nil || resp.StatusCode != 200 {
+		return
+	}
+	defer resp.Body.Close()
+	var entries []StateEntry
+	if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
+		return
+	}
+	h.reconstructRemoteHandlers(entries)
+}
+
+// reconstructRemoteHandlers populates sections with remote fields from state entries.
+func (h *DevTUI) reconstructRemoteHandlers(entries []StateEntry) {
+	for _, entry := range entries {
+		var section *tabSection
+		for _, s := range h.TabSections {
+			if s.title == entry.TabTitle {
+				section = s
+				break
+			}
+		}
+		if section == nil {
+			continue
+		}
+		f := newRemoteField(entry, h.actionBaseURL(), section)
+		if f != nil {
+			section.addFields(f)
+		}
 	}
 }
