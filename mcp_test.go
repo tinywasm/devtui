@@ -67,7 +67,7 @@ func TestGetMCPToolsMetadata(t *testing.T) {
 	tui.NewTabSection("DEPLOY", "Deploy Section")
 
 	// Get MCP tools metadata
-	tools := tui.GetMCPToolsMetadata()
+	tools := tui.GetMCPTools()
 
 	// Verify tool exists
 	if len(tools) != 1 {

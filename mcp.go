@@ -9,9 +9,9 @@ const (
 	MCPToolName = "app_get_logs"
 )
 
-// GetMCPToolsMetadata returns MCP tools provided by DevTUI.
+// GetMCPTools returns MCP tools provided by DevTUI.
 // This method is called by mcpserve to discover tools.
-func (d *DevTUI) GetMCPToolsMetadata() []mcp.ToolMetadata {
+func (d *DevTUI) GetMCPTools() []mcp.Tool {
 	// Get available section titles for enum and description
 	sectionTitles := d.getSectionTitles()
 
@@ -27,11 +27,11 @@ func (d *DevTUI) GetMCPToolsMetadata() []mcp.ToolMetadata {
 	}
 	description += ". Pass empty section parameter to list sections with descriptions."
 
-	return []mcp.ToolMetadata{
+	return []mcp.Tool{
 		{
 			Name:        MCPToolName,
 			Description: description,
-			Parameters: []mcp.ParameterMetadata{
+			Parameters: []mcp.Parameter{
 				{
 					Name:        "section",
 					Description: "Section name to get logs from (e.g., BUILD, DEPLOY). Leave empty to list all available sections.",
