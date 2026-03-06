@@ -2,7 +2,6 @@ package devtui
 
 import (
 	"net/http"
-	"net/url"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -169,30 +168,16 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 	fieldHandlers := currentTab.fieldHandlers
 	totalFields := len(fieldHandlers)
 
-	// NEW: Client Mode interception
+	// Client Mode: handle Ctrl+C to stop everything
 	if h.ClientMode && h.ClientURL != "" {
 		switch msg.Type {
-		case tea.KeyRunes:
-			// Send key to server
-			if len(msg.Runes) == 1 {
-				key := string(msg.Runes[0])
-				// Async send to avoid blocking UI
-				go func() {
-					// Post to /action?key=...
-					targetURL := h.ClientURL + "/action?key=" + url.QueryEscape(key)
-					resp, err := http.Post(targetURL, "application/json", nil)
-					if err != nil {
-						if h.Logger != nil {
-							h.Logger("Error sending key to server:", err)
-						}
-					} else {
-						resp.Body.Close()
-					}
-				}()
-				return false, nil
-			}
 		case tea.KeyCtrlC:
-			// Just quit locally
+			// Stop project + clean terminal + exit
+			go func() {
+				targetURL := h.actionBaseURL() + "/action?key=stop&value="
+				http.Post(targetURL, "application/json", nil)
+			}()
+			close(h.ExitChan)
 			return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 		}
 	}

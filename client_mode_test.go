@@ -86,35 +86,27 @@ func TestClientModeKeyboard(t *testing.T) {
 	}
 	tui := NewTUI(config)
 
-	// Simulate 'r' key press
-	// We call Update directly
-	tui.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("r")})
-
-	// Verify request sent
-	select {
-	case key := <-actionReceived:
-		if key != "r" {
-			t.Errorf("Expected action key 'r', got '%s'", key)
-		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for action request")
-	}
-
-	// Test Ctrl+C
-	// We expect tea.Quit command sequence
+	// Test Ctrl+C: should send "stop" action and close ExitChan
 	_, cmd := tui.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
 	if cmd == nil {
 		t.Error("Expected command from Ctrl+C, got nil")
 	}
 
-	// In Client Mode, ExitChan should NOT be closed by Ctrl+C
+	// Verify "stop" action was sent
 	select {
-	case <-config.ExitChan:
-		t.Error("ExitChan should not be closed by Ctrl+C in Client Mode")
-	default:
-		// Good
+	case key := <-actionReceived:
+		if key != "stop" {
+			t.Errorf("Expected action key 'stop', got '%s'", key)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("Timeout waiting for action request")
 	}
 
-	// Close explicitly for cleanup
-	close(config.ExitChan)
+	// ExitChan should be closed by Ctrl+C
+	select {
+	case <-config.ExitChan:
+		// Good - channel was closed
+	default:
+		t.Error("ExitChan should be closed by Ctrl+C in Client Mode")
+	}
 }
