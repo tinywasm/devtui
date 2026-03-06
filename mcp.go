@@ -2,7 +2,7 @@ package devtui
 
 import (
 	. "github.com/tinywasm/fmt"
-	"github.com/tinywasm/mcpserve"
+	"github.com/tinywasm/mcp"
 )
 
 const (
@@ -11,7 +11,7 @@ const (
 
 // GetMCPToolsMetadata returns MCP tools provided by DevTUI.
 // This method is called by mcpserve to discover tools.
-func (d *DevTUI) GetMCPToolsMetadata() []mcpserve.ToolMetadata {
+func (d *DevTUI) GetMCPToolsMetadata() []mcp.ToolMetadata {
 	// Get available section titles for enum and description
 	sectionTitles := d.getSectionTitles()
 
@@ -27,11 +27,11 @@ func (d *DevTUI) GetMCPToolsMetadata() []mcpserve.ToolMetadata {
 	}
 	description += ". Pass empty section parameter to list sections with descriptions."
 
-	return []mcpserve.ToolMetadata{
+	return []mcp.ToolMetadata{
 		{
 			Name:        MCPToolName,
 			Description: description,
-			Parameters: []mcpserve.ParameterMetadata{
+			Parameters: []mcp.ParameterMetadata{
 				{
 					Name:        "section",
 					Description: "Section name to get logs from (e.g., BUILD, DEPLOY). Leave empty to list all available sections.",
@@ -41,7 +41,7 @@ func (d *DevTUI) GetMCPToolsMetadata() []mcpserve.ToolMetadata {
 					Default:     "",
 				},
 			},
-			Execute: d.mcpGetSectionLogs,
+			Execute: func(args map[string]any) { d.mcpGetSectionLogs(args) },
 		},
 	}
 }
