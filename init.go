@@ -139,7 +139,6 @@ func (h *DevTUI) Init() tea.Cmd {
 		go h.startSSEClient(h.ClientURL)
 	}
 	return tea.Batch(
-		tea.EnterAltScreen,
 		h.listenToMessages(),
 		h.tickEverySecond(),
 		h.cursorTick(), // Start blinking
