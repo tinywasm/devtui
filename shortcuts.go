@@ -94,8 +94,7 @@ Viewport:
   •  ▲  - `, "can", `scroll`, "up", `
   • ▼ ▲ - `, "can", `scroll`, "down", `/`, "up", "\n\n",
 		"quit", `:
-  • Ctrl+C         - `, "quit", `
-`).String()
+  • Ctrl+C  - `, "stop", " & ", "quit", "\n").String()
 
 	// Add registered shortcuts section
 	if h.tui != nil && h.tui.shortcutRegistry != nil {
@@ -108,7 +107,7 @@ Viewport:
 		}
 	}
 
-	content += "\n" + Translate("language", "supported", `: en, es, zh, hi, ar, pt, fr, de, ru`).String()
+	content += "\n" + Translate("language", "supported", ": en, es, zh, hi, ar, pt, fr, de, ru").String()
 	return content
 }
 
