@@ -25,6 +25,8 @@ type DevTUI struct {
 	*TuiConfig
 	*tuiStyle
 
+	apiKey string // stored from TuiConfig.APIKey
+
 	id *unixid.UnixID
 
 	ready    bool
@@ -78,6 +80,7 @@ type TuiConfig struct {
 
 	ClientMode bool   // true if it should listen to SSE
 	ClientURL  string // e.g. http://localhost:3030/logs
+	APIKey     string // Bearer token for secured daemon; set by app, empty = open/local
 }
 
 // NewTUI creates a new DevTUI instance and initializes it.
@@ -107,6 +110,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 
 	tui := &DevTUI{
 		TuiConfig:        c,
+		apiKey:           c.APIKey,
 		focused:          true, // assume the app is focused
 		TabSections:      []*tabSection{},
 		activeTab:        0, // Will be adjusted in Start() method

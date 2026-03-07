@@ -13,8 +13,10 @@ import (
 )
 
 func TestClientModeSSE(t *testing.T) {
+	authHeaderChan := make(chan string, 1)
 	// Setup mock SSE server
 	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeaderChan <- r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(200)
 
@@ -40,13 +42,24 @@ func TestClientModeSSE(t *testing.T) {
 	// Initialize TUI in Client Mode
 	config := &TuiConfig{
 		ClientMode: true,
-		ClientURL:  sseServer.URL,
+		ClientURL:  sseServer.URL + "/logs",
+		APIKey:     "test-api-key",
 		ExitChan:   make(chan bool),
 	}
 	tui := NewTUI(config)
 	tui.SetTestMode(true) // Ensure deterministic behavior if applicable
 	// Start SSE client manually (Init() does this normally, but tests don't call Init())
 	go tui.startSSEClient(config.ClientURL)
+
+	// Wait for auth header
+	select {
+	case auth := <-authHeaderChan:
+		if auth != "Bearer test-api-key" {
+			t.Errorf("Expected auth header 'Bearer test-api-key', got '%s'", auth)
+		}
+	case <-time.After(2 * time.Second):
+		t.Error("Timeout waiting for auth header")
+	}
 
 	// Wait for message to arrive in channel
 	select {
@@ -70,9 +83,15 @@ func TestClientModeKeyboard(t *testing.T) {
 
 	// Setup mock action server
 	actionServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/action" {
-			key := r.URL.Query().Get("key")
-			actionReceived <- key
+		if r.URL.Path == "/mcp" {
+			var body struct {
+				Method string            `json:"method"`
+				Params map[string]string `json:"params"`
+			}
+			json.NewDecoder(r.Body).Decode(&body)
+			if body.Method == "tinywasm/action" {
+				actionReceived <- body.Params["key"]
+			}
 		}
 		w.WriteHeader(200)
 	}))

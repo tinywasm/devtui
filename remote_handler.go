@@ -3,14 +3,15 @@
 package devtui
 
 import (
-	"net/http"
-	"net/url"
+	"context"
+
+	"github.com/tinywasm/mcp"
 )
 
 // newRemoteField constructs a *field populated from a StateEntry.
 // Uses anyHandler closures directly — no intermediate interface types needed.
 // The entry pointer is captured so optimistic value updates stay in sync.
-func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field {
+func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection) *field {
 	e := entry // local copy captured by closures
 	var anyH *anyHandler
 
@@ -34,7 +35,7 @@ func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field 
 			editableFunc: func() bool { return true },
 			changeFunc: func(v string) {
 				e.Value = v // optimistic update
-				postAction(actionBase, e.Shortcut, v)
+				postAction(client, e.Shortcut, v)
 			},
 		}
 	case handlerTypeExecution:
@@ -45,8 +46,8 @@ func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field 
 			labelFunc:    func() string { return e.Label },
 			valueFunc:    func() string { return e.Label },
 			editableFunc: func() bool { return false },
-			executeFunc:  func() { postAction(actionBase, e.Shortcut, "") },
-			changeFunc:   func(_ string) { postAction(actionBase, e.Shortcut, "") },
+			executeFunc:  func() { postAction(client, e.Shortcut, "") },
+			changeFunc:   func(_ string) { postAction(client, e.Shortcut, "") },
 		}
 	case handlerTypeInteractive:
 		anyH = &anyHandler{
@@ -58,7 +59,7 @@ func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field 
 			editableFunc: func() bool { return true },
 			editModeFunc: func() bool { return false },
 			changeFunc: func(v string) {
-				postAction(actionBase, e.Shortcut, v)
+				postAction(client, e.Shortcut, v)
 			},
 		}
 	default:
@@ -68,11 +69,13 @@ func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field 
 	return &field{handler: anyH, parentTab: ts, isRemote: true}
 }
 
-// postAction fires a non-blocking POST to the daemon action endpoint.
-func postAction(baseURL, shortcut, value string) {
-	if shortcut == "" {
+// postAction sends a tinywasm/action JSON-RPC call to the daemon (fire-and-forget).
+func postAction(client *mcp.Client, shortcut, value string) {
+	if shortcut == "" || client == nil {
 		return
 	}
-	go http.PostForm(baseURL+"/action",
-		url.Values{"key": {shortcut}, "value": {value}})
+	client.Dispatch(context.Background(), "tinywasm/action", map[string]string{
+		"key":   shortcut,
+		"value": value,
+	})
 }

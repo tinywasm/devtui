@@ -1,7 +1,7 @@
 package devtui
 
 import (
-	"net/http"
+	"context"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -173,10 +173,7 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			// Stop project + clean terminal + exit
-			go func() {
-				targetURL := h.actionBaseURL() + "/action?key=stop&value="
-				http.Post(targetURL, "application/json", nil)
-			}()
+			h.mcpClient().Dispatch(context.Background(), "tinywasm/action", map[string]string{"key": "stop", "value": ""})
 			close(h.ExitChan)
 			return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 		}
