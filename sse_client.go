@@ -2,12 +2,14 @@ package devtui
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/mcp"
 )
 
 // tabContentDTO is a Data Transfer Object for tabContent JSON
@@ -40,7 +42,7 @@ func (h *DevTUI) startSSEClient(url string) {
 	}
 
 	// Fetch initial state snapshot before entering the retry loop
-	h.fetchAndReconstructState(h.actionBaseURL())
+	h.fetchAndReconstructState()
 
 	client := &http.Client{
 		Timeout: 0, // Infinite timeout for SSE
@@ -71,6 +73,9 @@ func (h *DevTUI) startSSEClient(url string) {
 		req.Header.Set("Accept", "text/event-stream")
 		req.Header.Set("Cache-Control", "no-cache")
 		req.Header.Set("Connection", "keep-alive")
+		if h.apiKey != "" {
+			req.Header.Set("Authorization", "Bearer "+h.apiKey)
+		}
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -114,8 +119,6 @@ func (h *DevTUI) startSSEClient(url string) {
 					continue
 				}
 				switch currentEvent {
-				case "state":
-					h.handleStateEvent(data)
 				default: // "" or "log"
 					h.handleLogEvent(data)
 				}
@@ -128,6 +131,13 @@ func (h *DevTUI) startSSEClient(url string) {
 	}
 }
 
+// mcpClient builds a stateless JSON-RPC client targeting the daemon's /mcp endpoint.
+// ClientURL = "http://host:port/logs" → base URL = "http://host:port"
+func (h *DevTUI) mcpClient() *mcp.Client {
+	baseURL := strings.TrimSuffix(h.ClientURL, "/logs")
+	return mcp.NewClient(baseURL, h.apiKey)
+}
+
 // handleLogEvent processes a plain log SSE data line.
 func (h *DevTUI) handleLogEvent(data string) {
 	var dto tabContentDTO
@@ -135,6 +145,13 @@ func (h *DevTUI) handleLogEvent(data string) {
 		if h.Logger != nil {
 			h.Logger("Error unmarshalling SSE data:", err)
 		}
+		return
+	}
+
+	// HandlerType 0 = TypeStateRefresh signal from daemon
+	if dto.HandlerType == 0 {
+		h.fetchAndReconstructState()
+		h.RefreshUI()
 		return
 	}
 
@@ -174,18 +191,6 @@ func (h *DevTUI) handleLogEvent(data string) {
 	h.tabContentsChan <- content
 }
 
-// handleStateEvent processes a live "event: state" SSE data line.
-// It replaces any previously reconstructed remote handlers with fresh ones from the payload.
-func (h *DevTUI) handleStateEvent(data string) {
-	var entries []StateEntry
-	if err := json.Unmarshal([]byte(data), &entries); err != nil {
-		return
-	}
-	h.clearRemoteHandlers()
-	h.reconstructRemoteHandlers(entries)
-	h.RefreshUI()
-}
-
 // clearRemoteHandlers removes all fields that were added via SSE state reconstruction.
 // Called before applying a new state event so stale remote handlers don't accumulate.
 func (h *DevTUI) clearRemoteHandlers() {
@@ -200,24 +205,24 @@ func (h *DevTUI) clearRemoteHandlers() {
 	}
 }
 
-// fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers.
-// Degrades gracefully if /state is unavailable.
-func (h *DevTUI) fetchAndReconstructState(baseURL string) {
-	resp, err := http.Get(baseURL + "/state")
-	if err != nil || resp.StatusCode != 200 {
-		return
-	}
-	defer resp.Body.Close()
-	var entries []StateEntry
-	if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
-		return
-	}
-	h.clearRemoteHandlers()
-	h.reconstructRemoteHandlers(entries)
+// fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers via JSON-RPC.
+func (h *DevTUI) fetchAndReconstructState() {
+	h.mcpClient().Call(context.Background(), "tinywasm/state", map[string]string{}, func(result []byte, err error) {
+		if err != nil || result == nil {
+			return
+		}
+		var entries []StateEntry
+		if err := json.Unmarshal(result, &entries); err != nil {
+			return
+		}
+		h.clearRemoteHandlers()
+		h.reconstructRemoteHandlers(entries)
+	})
 }
 
 // reconstructRemoteHandlers populates sections with remote fields from state entries.
 func (h *DevTUI) reconstructRemoteHandlers(entries []StateEntry) {
+	client := h.mcpClient()
 	for _, entry := range entries {
 		var section *tabSection
 		for _, s := range h.TabSections {
@@ -229,7 +234,7 @@ func (h *DevTUI) reconstructRemoteHandlers(entries []StateEntry) {
 		if section == nil {
 			continue
 		}
-		f := newRemoteField(entry, h.actionBaseURL(), section)
+		f := newRemoteField(entry, client, section)
 		if f != nil {
 			section.addFields(f)
 		}
