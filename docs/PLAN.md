@@ -1,18 +1,20 @@
-# Plan: DevTUI — Fix Action URL Bug + Ctrl+C Stop Everything
+# Plan: tinywasm/devtui — Migrate REST calls to JSON-RPC 2.0
+
+← Requires: [mcp PLAN](../../mcp/docs/PLAN.md) + [app PLAN](../../app/docs/PLAN.md) executed first
 
 ## References
-
-- `userKeyboard.go` — keyboard handler (both bugs are here)
-- `sse_client.go` — `actionBaseURL()` helper (already correct)
-- `remote_handler.go` — `postAction()` (already uses correct base URL)
-- `init.go` — `TuiConfig.ClientURL` field
+- `devtui/sse_client.go` — SSE client + `/state` + `/action` REST calls
+- `devtui/remote_handler.go` — `postAction()` REST call
+- `devtui/userKeyboard.go` — Ctrl+C REST call
+- `devtui/init.go` — DevTUI struct + TuiConfig
+- `devtui/mcp.go` — existing MCP tool integration (already imports `mcp` package)
 
 ---
 
 ## Development Rules
-
 - **SRP:** Every file must have a single, well-defined purpose.
 - **Max 500 lines per file.**
+- **No global state.** Use DI via interfaces.
 - **Standard library only** in test assertions.
 - **Test runner:** `gotest`. **Publish:** `gopush`.
 - **Language:** Plans in English, chat in Spanish.
@@ -20,165 +22,254 @@
 
 ---
 
-## Problem 1: Wrong Action URL (critical bug)
+## Problem Summary
 
-In `userKeyboard.go:182`, client mode sends key presses to a wrong URL:
+`devtui` communicates with the daemon via plain REST calls that no longer exist
+after mcp PLAN executes:
 
-```go
-// ACTUAL — BROKEN:
-targetURL := h.ClientURL + "/action?key=" + url.QueryEscape(key)
-// h.ClientURL = "http://localhost:3030/logs"
-// Result:  "http://localhost:3030/logs/action?key=q" → 404 ALWAYS
+| Call site | Current (REST) | After mcp PLAN (JSON-RPC) |
+|-----------|---------------|--------------------------|
+| `userKeyboard.go` | `POST /action?key=stop` | `mcp.Client.Call("tinywasm/action", ...)` |
+| `remote_handler.go` | `POST /action` form | `mcp.Client.Call("tinywasm/action", ...)` |
+| `sse_client.go` | `GET /state` | `mcp.Client.Call("tinywasm/state", ...)` |
+| `sse_client.go` | `GET /logs` SSE | **unchanged** — SSE stays HTTP |
 
-// CORRECT:
-targetURL := h.actionBaseURL() + "/action?key=" + url.QueryEscape(key)
-// actionBaseURL() = strings.TrimSuffix(h.ClientURL, "/logs") → "http://localhost:3030"
-// Result:  "http://localhost:3030/action?key=q" ← correct
-```
+Additionally: secured daemon connections require `Authorization: Bearer <apiKey>`
+header on all `/mcp` requests and the SSE `/logs` request.
 
-`actionBaseURL()` already exists in `sse_client.go:31` and is used correctly by
-`fetchAndReconstructState` and `newRemoteField`. The keyboard handler just missed it.
+**Key design principle:** `devtui` is a pure library. It does NOT manage, generate,
+or persist API keys. The `APIKey` field in `TuiConfig` is always set by the
+consuming application (`tinywasm/app`), which orchestrates key lifecycle.
+
+`devtui` already imports `tinywasm/mcp` (via `devtui/mcp.go`). The reusable
+`mcp.Client` type (added in mcp PLAN) is used directly — no new JSON-RPC helper
+files are created in devtui.
 
 ---
 
-## Problem 2: TUI not cleaned up on exit
+## `DevTUI` struct changes (`init.go`)
 
-Currently in both standalone and client mode, the TUI content is left printed on
-the terminal when the app exits. The alt-screen must be exited properly.
+Add `APIKey` to `TuiConfig` and `apiKey` to `DevTUI`:
 
-In client mode (`Ctrl+C`), the code does:
 ```go
+type TuiConfig struct {
+    // ... existing fields ...
+    APIKey string // Bearer token for secured daemon; set by app, empty = open/local
+}
+
+type DevTUI struct {
+    // ... existing fields ...
+    apiKey string // stored from TuiConfig.APIKey
+}
+```
+
+`apiKey` is set in the constructor from `TuiConfig.APIKey`.
+
+---
+
+## `mcpClient()` helper in `sse_client.go`
+
+Derives base URL from `ClientURL` (which points to `/logs`) and builds an
+`mcp.Client` with the stored API key. The `/mcp` path is added by `mcp.NewClient`
+internally — not hardcoded in devtui.
+
+```go
+// mcpClient builds a stateless JSON-RPC client targeting the daemon's /mcp endpoint.
+// ClientURL = "http://host:port/logs" → base URL = "http://host:port"
+func (h *DevTUI) mcpClient() *mcp.Client {
+    baseURL := strings.TrimSuffix(h.ClientURL, "/logs")
+    return mcp.NewClient(baseURL, h.apiKey)
+}
+```
+
+---
+
+## MODIFY: `devtui/sse_client.go`
+
+### `fetchAndReconstructState` — GET /state → JSON-RPC `tinywasm/state`
+
+```go
+// Before:
+func (h *DevTUI) fetchAndReconstructState(baseURL string) {
+    resp, err := http.Get(baseURL + "/state")
+    if err != nil || resp.StatusCode != 200 { return }
+    defer resp.Body.Close()
+    var entries []StateEntry
+    json.NewDecoder(resp.Body).Decode(&entries)
+    ...
+}
+
+// After — callback-based (mcp.Client uses tinywasm/fetch, async in WASM + stdlib):
+func (h *DevTUI) fetchAndReconstructState() {
+    h.mcpClient().Call("tinywasm/state", map[string]string{}, func(result []byte, err error) {
+        if err != nil || result == nil { return }
+        var entries []StateEntry
+        if err := json.Decode(result, &entries); err != nil { return }
+        h.clearRemoteHandlers()
+        h.reconstructRemoteHandlers(entries)
+    })
+}
+```
+
+### `handleLogEvent` — detect state-refresh signal
+
+The daemon sends a lightweight `{"handler_type": 0}` signal (no state payload)
+when handler state changes (project started/stopped). `handleLogEvent` checks for
+this reserved marker and re-fetches state via JSON-RPC instead of rendering it as
+a log entry. `handleStateEvent` (which parsed full state JSON from SSE) is removed.
+
+```go
+// handleLogEvent processes a plain SSE data line.
+func (h *DevTUI) handleLogEvent(data string) {
+    var dto tabContentDTO
+    if err := json.Unmarshal([]byte(data), &dto); err != nil { return }
+
+    // HandlerType 0 = TypeStateRefresh signal from daemon
+    if dto.HandlerType == 0 {
+        h.fetchAndReconstructState()
+        h.RefreshUI()
+        return
+    }
+    // ... existing log rendering logic unchanged ...
+}
+```
+
+### Remove `handleStateEvent`
+
+`handleStateEvent` is deleted — the SSE `event: state` branch in the event loop
+switch is removed. All SSE messages now flow through `handleLogEvent`.
+The `event:` SSE prefix is no longer used.
+
+### SSE request — add API key header
+
+```go
+req.Header.Set("Accept", "text/event-stream")
+req.Header.Set("Cache-Control", "no-cache")
+req.Header.Set("Connection", "keep-alive")
+if h.apiKey != "" {
+    req.Header.Set("Authorization", "Bearer "+h.apiKey)
+}
+```
+
+---
+
+## MODIFY: `devtui/remote_handler.go`
+
+### `postAction` — `http.PostForm /action` → JSON-RPC `tinywasm/action`
+
+```go
+// Before:
+func postAction(baseURL, shortcut, value string) {
+    if shortcut == "" { return }
+    go http.PostForm(baseURL+"/action",
+        url.Values{"key": {shortcut}, "value": {value}})
+}
+
+// After:
+// postAction sends a tinywasm/action JSON-RPC call to the daemon (fire-and-forget).
+// client is built by the caller from DevTUI.mcpClient().
+func postAction(client *mcp.Client, shortcut, value string) {
+    if shortcut == "" { return }
+    client.Dispatch("tinywasm/action", map[string]string{
+        "key":   shortcut,
+        "value": value,
+    })
+}
+```
+
+### `newRemoteField` signature update
+
+```go
+// Before:
+func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field
+
+// After:
+func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection) *field
+```
+
+All `postAction` calls inside closures pass the `client` argument.
+Update `reconstructRemoteHandlers` in `sse_client.go` to pass `h.mcpClient()`
+instead of `h.actionBaseURL()`.
+
+---
+
+## MODIFY: `devtui/userKeyboard.go`
+
+### Ctrl+C in client mode — REST → JSON-RPC
+
+```go
+// Before:
+go func() {
+    targetURL := h.actionBaseURL() + "/action?key=stop&value="
+    http.Post(targetURL, "application/json", nil)
+}()
+close(h.ExitChan)
+return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
+
+// After:
+h.mcpClient().Dispatch("tinywasm/action", map[string]string{"key": "stop", "value": ""})
+close(h.ExitChan)
 return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 ```
-This is correct. However the TUI may not reach this handler if `ExitChan` is closed
-externally (e.g. daemon dies), because `Update()` receives `tea.Quit` from the channel
-listener but `ExitAltScreen` is not issued. This needs to be verified and fixed if needed.
 
 ---
 
-## Problem 3: `q` as stop key — wrong design
+## Files to Create / Modify
 
-The current `KeyRunes` interception forwards ALL single-char keys to the daemon.
-This is fragile: any key typed accidentally gets forwarded, and single letters can
-conflict with future handler shortcuts.
+| File | Action | Description |
+|------|--------|-------------|
+| `devtui/init.go` | **MODIFY** | Add `APIKey` to `TuiConfig`; `apiKey` to `DevTUI`; set in constructor |
+| `devtui/sse_client.go` | **MODIFY** | Add `mcpClient()`; update `fetchAndReconstructState`; add auth header to SSE; update `reconstructRemoteHandlers` call |
+| `devtui/remote_handler.go` | **MODIFY** | `postAction` → JSON-RPC via `mcp.Client`; update `newRemoteField` signature |
+| `devtui/userKeyboard.go` | **MODIFY** | Ctrl+C → `mcpClient().Call("tinywasm/action", ...)` |
+| `devtui/mcp_test.go` | **MODIFY** | Mock `/mcp` JSON-RPC instead of `/action`/`/state` |
+| `devtui/client_mode_test.go` | **MODIFY** | Assert JSON-RPC body format; verify `APIKey` wires into auth header |
 
-**Correct design:** `Ctrl+C` is the universal "kill" convention. In client mode it should:
-1. Signal the daemon to stop the project (`POST /action?key=stop`)
-2. Exit alt-screen cleanly (restore terminal)
-3. Close the TUI process
-
-No other keys should be forwarded generically. Handler shortcuts use `remoteField.postAction()`
-which already works correctly via the shortcut key system.
-
----
-
-## Problem 4: Daemon action key mismatch
-
-The daemon's `OnUIAction` currently handles `"q"` → `stopProject()`.
-After this fix, client sends `key=stop`. This is a coordinated change with `app/daemon.go`.
-
----
-
-## Files to Modify
-
-### `devtui/userKeyboard.go` — client mode interception block
-
-**Before** (lines 173-198):
-```go
-if h.ClientMode && h.ClientURL != "" {
-    switch msg.Type {
-    case tea.KeyRunes:
-        if len(msg.Runes) == 1 {
-            key := string(msg.Runes[0])
-            go func() {
-                targetURL := h.ClientURL + "/action?key=" + url.QueryEscape(key) // BUG
-                resp, err := http.Post(targetURL, "application/json", nil)
-                ...
-            }()
-            return false, nil
-        }
-    case tea.KeyCtrlC:
-        return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
-    }
-}
-```
-
-**After**:
-```go
-if h.ClientMode && h.ClientURL != "" {
-    switch msg.Type {
-    case tea.KeyCtrlC:
-        // Stop everything: signal daemon to stop project, clean terminal, close TUI
-        go http.PostForm(h.actionBaseURL()+"/action",
-            url.Values{"key": {"stop"}, "value": {""}})
-        close(h.ExitChan)
-        return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
-    }
-}
-```
-
-Changes:
-- Remove the `KeyRunes` block entirely (no more generic key forwarding)
-- `Ctrl+C` now: sends stop action to daemon + exits alt-screen + quits
-
-### `devtui/shortcuts.go` — update help content
-
-Replace the quit section in `generateHelpContent()`:
-```go
-// Before:
-"quit", `:
-  • Ctrl+C         - `, "quit", `
-`
-
-// After:
-"quit", `:
-  • Ctrl+C  - `, "stop", " & quit\n",
-```
-
-Only one entry. No Ctrl+L, no "TUI only" variant.
-
-### `app/daemon.go` — coordinated action key change
-
-```go
-// Before:
-case "q":
-    dtp.stopProject()
-
-// After:
-case "stop":
-    dtp.stopProject()
-```
+**No new files created.** `devtui` reuses `mcp.Client` from the `tinywasm/mcp`
+package already imported by `devtui/mcp.go`.
 
 ---
 
 ## Execution Steps
 
-### Step 1 — Fix URL bug in `userKeyboard.go`
-Change `h.ClientURL + "/action?key="` → `h.actionBaseURL() + "/action?key="`.
-This alone fixes all existing action routing (remote handler shortcuts also benefit).
+### Step 1 — Prerequisite check
+Confirm mcp and app PLANs published:
+- `mcp.NewClient(baseURL, apiKey)` exists
+- Daemon serves `tinywasm/action` and `tinywasm/state` as JSON-RPC on POST `/mcp`
 
-### Step 2 — Replace `KeyRunes` block with clean `Ctrl+C` handler
+### Step 2 — Modify `devtui/init.go`
+Add `APIKey` to config + struct.
 
-### Step 3 — Update quit help text in `shortcuts.go`
+### Step 3 — Modify `devtui/sse_client.go`
+Add `mcpClient()`, update `fetchAndReconstructState`, add auth header, update
+`reconstructRemoteHandlers` callers.
 
-### Step 4 — Update `app/daemon.go`: `case "q"` → `case "stop"`
+### Step 4 — Modify `devtui/remote_handler.go`
+Update `postAction` + `newRemoteField`.
 
-### Step 5 — Run tests and publish devtui
+### Step 5 — Modify `devtui/userKeyboard.go`
+
+### Step 6 — Update tests
+
+### Step 7 — Run tests and publish
 ```bash
 gotest
-gopush 'fix: correct action URL, Ctrl+C stops project and cleans terminal'
-```
-
-### Step 6 — Run tests and publish app
-```bash
-cd ../app && gotest && gopush 'fix: handle stop action key from devtui Ctrl+C'
+gopush 'feat: migrate REST action/state calls to JSON-RPC 2.0 via mcp.Client, add API key auth header'
 ```
 
 ---
 
 ## Test Strategy
 
-- `TestClientMode_CtrlC_SendsStopAction` — mock HTTP server receives `POST /action?key=stop`
-  when `Ctrl+C` is pressed in client mode
-- `TestClientMode_KeyRunes_NoLongerForwarded` — regular key presses do NOT trigger HTTP calls
-- Existing keyboard tests must continue passing
+| Test | Validates |
+|------|-----------|
+| `TestMCPClient_SendsCorrectBody` | `mcp.Client.Call` sends `jsonrpc:"2.0"`, method, params (tested in mcp pkg, not here) |
+| `TestClientMode_CtrlC_SendsJSONRPCStop` | POST /mcp with `tinywasm/action` + `key=stop` |
+| `TestFetchState_CallsJSONRPCState` | Calls `tinywasm/state` on /mcp, parses `[]StateEntry` |
+| `TestHandleLogEvent_StateRefreshSignal_FetchesState` | `handler_type=0` in SSE data → calls `fetchAndReconstructState()` |
+| `TestHandleLogEvent_NormalEntry_NoStateRefresh` | Normal log entry → no JSON-RPC call triggered |
+| `TestPostAction_SendsJSONRPCAction` | `postAction` sends JSON-RPC body with key+value |
+| `TestSSEConnect_WithAPIKey_SetsHeader` | GET /logs has `Authorization: Bearer` when APIKey set |
+| `TestSSEConnect_NoAPIKey_NoAuthHeader` | No auth header when APIKey empty |
+| `TestTuiConfig_APIKey_StoredInDevTUI` | `TuiConfig.APIKey` propagates to `DevTUI.apiKey` |
+| Existing keyboard/shortcut tests | No regression |
