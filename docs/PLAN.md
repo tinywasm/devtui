@@ -232,10 +232,15 @@ package already imported by `devtui/mcp.go`.
 
 ## Execution Steps
 
-### Step 1 — Prerequisite check
-Confirm mcp and app PLANs published:
-- `mcp.NewClient(baseURL, apiKey)` exists
-- Daemon serves `tinywasm/action` and `tinywasm/state` as JSON-RPC on POST `/mcp`
+### Step 1 — Prerequisite: update tinywasm/mcp to v0.0.17
+```bash
+go get github.com/tinywasm/mcp@v0.0.17
+```
+Confirm the following exist at v0.0.17:
+- `mcp.NewClient(baseURL, apiKey string) *Client`
+- `(*Client).Call(ctx context.Context, method string, params any, callback func([]byte, error))`
+- `(*Client).Dispatch(ctx context.Context, method string, params any)`
+- Daemon (app PLAN) serves `tinywasm/action` and `tinywasm/state` as JSON-RPC on POST `/mcp`
 
 ### Step 2 — Modify `devtui/init.go`
 Add `APIKey` to config + struct.
