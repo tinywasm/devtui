@@ -65,7 +65,7 @@ func newRemoteField(entry StateEntry, actionBase string, ts *tabSection) *field 
 		return nil // HandlerTypeLoggable — no field, logs arrive via SSE
 	}
 
-	return &field{handler: anyH, parentTab: ts}
+	return &field{handler: anyH, parentTab: ts, isRemote: true}
 }
 
 // postAction fires a non-blocking POST to the daemon action endpoint.

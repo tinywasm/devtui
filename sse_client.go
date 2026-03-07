@@ -174,10 +174,30 @@ func (h *DevTUI) handleLogEvent(data string) {
 	h.tabContentsChan <- content
 }
 
-// handleStateEvent processes a live "event: state" SSE data line (Phase 2, no-op for now).
+// handleStateEvent processes a live "event: state" SSE data line.
+// It replaces any previously reconstructed remote handlers with fresh ones from the payload.
 func (h *DevTUI) handleStateEvent(data string) {
-	// Phase 2: unmarshal StateEntry and update matching remote field value.
-	// Currently a no-op — daemon does not yet push state events.
+	var entries []StateEntry
+	if err := json.Unmarshal([]byte(data), &entries); err != nil {
+		return
+	}
+	h.clearRemoteHandlers()
+	h.reconstructRemoteHandlers(entries)
+	h.RefreshUI()
+}
+
+// clearRemoteHandlers removes all fields that were added via SSE state reconstruction.
+// Called before applying a new state event so stale remote handlers don't accumulate.
+func (h *DevTUI) clearRemoteHandlers() {
+	for _, s := range h.TabSections {
+		filtered := s.fieldHandlers[:0]
+		for _, f := range s.fieldHandlers {
+			if !f.isRemote {
+				filtered = append(filtered, f)
+			}
+		}
+		s.fieldHandlers = filtered
+	}
 }
 
 // fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers.
@@ -192,6 +212,7 @@ func (h *DevTUI) fetchAndReconstructState(baseURL string) {
 	if err := json.NewDecoder(resp.Body).Decode(&entries); err != nil {
 		return
 	}
+	h.clearRemoteHandlers()
 	h.reconstructRemoteHandlers(entries)
 }
 

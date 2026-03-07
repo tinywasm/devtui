@@ -15,6 +15,7 @@ type field struct {
 	index         int
 	cursor        int          // cursor position in text value
 	viewport      TextViewport // Manages horizontal scroll
+	isRemote      bool         // true when populated via SSE state reconstruction
 }
 
 // setTempEditValueForTest permite modificar tempEditValue en tests
