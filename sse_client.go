@@ -234,7 +234,7 @@ func (h *DevTUI) reconstructRemoteHandlers(entries []StateEntry) {
 		if section == nil {
 			continue
 		}
-		f := newRemoteField(entry, client, section)
+		f := newRemoteField(entry, client, section, h)
 		if f != nil {
 			section.addFields(f)
 		}

@@ -11,7 +11,8 @@ import (
 // newRemoteField constructs a *field populated from a StateEntry.
 // Uses anyHandler closures directly — no intermediate interface types needed.
 // The entry pointer is captured so optimistic value updates stay in sync.
-func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection) *field {
+// The tui reference is used to register shortcuts in the ShortcutRegistry.
+func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection, tui *DevTUI) *field {
 	e := entry // local copy captured by closures
 	var anyH *anyHandler
 
@@ -66,7 +67,28 @@ func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection) *field
 		return nil // HandlerTypeLoggable — no field, logs arrive via SSE
 	}
 
-	return &field{handler: anyH, parentTab: ts, isRemote: true}
+	f := &field{handler: anyH, parentTab: ts, isRemote: true}
+
+	// Register shortcuts from StateEntry.Shortcuts in the TUI's registry
+	if tui != nil && tui.shortcutRegistry != nil && len(e.Shortcuts) > 0 {
+		fieldIndex := len(ts.fieldHandlers)
+		tabIndex := ts.index
+		for _, m := range e.Shortcuts {
+			for key := range m {
+				entry := &ShortcutEntry{
+					Key:         key,
+					Description: key, // Use key as description for remote shortcuts
+					TabIndex:    tabIndex,
+					FieldIndex:  fieldIndex,
+					HandlerName: e.HandlerName,
+					Value:       key,
+				}
+				tui.shortcutRegistry.Register(key, entry)
+			}
+		}
+	}
+
+	return f
 }
 
 // postAction sends a tinywasm/action JSON-RPC call to the daemon (fire-and-forget).

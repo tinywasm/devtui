@@ -4,13 +4,14 @@ package devtui
 // Produced by app.HeadlessTUI, consumed by DevTUI client mode.
 // JSON tags are the published contract — any producer must match them exactly.
 type StateEntry struct {
-	TabTitle     string `json:"tab_title"`
-	HandlerName  string `json:"handler_name"`
-	HandlerColor string `json:"handler_color"`
-	HandlerType  int    `json:"handler_type"` // HandlerType* constant below
-	Label        string `json:"label"`
-	Value        string `json:"value"`
-	Shortcut     string `json:"shortcut"` // keyboard key that controls this handler
+	TabTitle     string              `json:"tab_title"`
+	HandlerName  string              `json:"handler_name"`
+	HandlerColor string              `json:"handler_color"`
+	HandlerType  int                 `json:"handler_type"` // HandlerType* constant below
+	Label        string              `json:"label"`
+	Value        string              `json:"value"`
+	Shortcut     string              `json:"shortcut"`     // primary key = handler Name()
+	Shortcuts    []map[string]string `json:"shortcuts"`    // from ShortcutProvider
 }
 
 // HandlerType constants — mirror the private handlerType iota in anyHandler.go.
