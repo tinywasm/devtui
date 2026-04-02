@@ -4,13 +4,17 @@ go 1.25.2
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
-	github.com/tinywasm/fmt v0.18.17
+	github.com/tinywasm/fmt v0.22.0
 	github.com/tinywasm/time v0.3.1
 )
 
 require (
-	github.com/tinywasm/fetch v0.1.22 // indirect
-	github.com/tinywasm/json v0.1.7 // indirect
+	github.com/tinywasm/context v0.0.18 // indirect
+	github.com/tinywasm/dom v0.6.0 // indirect
+	github.com/tinywasm/fetch v0.1.23 // indirect
+	github.com/tinywasm/form v0.2.0 // indirect
+	github.com/tinywasm/json v0.4.0 // indirect
+	github.com/tinywasm/orm v0.6.0 // indirect
 )
 
 require (
@@ -24,7 +28,7 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/tinywasm/mcp v0.0.19
+	github.com/tinywasm/mcp v0.1.1
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/text v0.32.0 // indirect
 )
@@ -39,6 +43,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/muesli/termenv v0.16.0
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/tinywasm/unixid v0.2.22
+	github.com/tinywasm/unixid v0.2.23
 	golang.org/x/sys v0.39.0 // indirect
 )
