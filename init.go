@@ -66,6 +66,7 @@ type TuiConfig struct {
 	AppVersion string    // app version eg: "v1.0.0"
 	ExitChan   chan bool //  global chan to close app eg: make(chan bool)
 	Debug      bool      // NEW: Enable debug mode for unfiltered logs
+	TestMode   bool      // Set to true for synchronous execution in tests
 	/*// *ColorPalette style for the TUI
 	  // if nil it will use default style:
 	type ColorPalette struct {
@@ -119,6 +120,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		tuiStyle:         newTuiStyle(c.Color),
 		id:               id,                    // Set the ID here
 		shortcutRegistry: newShortcutRegistry(), // NEW: Initialize shortcut registry
+		testMode:         c.TestMode,
 	}
 
 	// Always add SHORTCUTS tab first

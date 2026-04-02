@@ -31,9 +31,9 @@ func (h *DevTUI) ContentView() string {
 	var contentLines []string
 
 	// NEW: Add display handler content if active field is a Display handler
-	fieldHandlers := section.fieldHandlers
-	if len(fieldHandlers) > 0 && section.indexActiveEditField < len(fieldHandlers) {
-		activeField := fieldHandlers[section.indexActiveEditField]
+	fieldHandlers := section.FieldHandlers
+	if len(fieldHandlers) > 0 && section.IndexActiveEditField < len(fieldHandlers) {
+		activeField := fieldHandlers[section.IndexActiveEditField]
 		if activeField.hasContentMethod() {
 			displayContent := activeField.getDisplayContent()
 			if displayContent != "" {
@@ -76,9 +76,9 @@ func (h *DevTUI) ContentViewPlain(tabIndex int) string {
 	var contentLines []string
 
 	// NEW: Add display handler content if active field is a Display handler
-	fieldHandlers := section.fieldHandlers
-	if len(fieldHandlers) > 0 && section.indexActiveEditField < len(fieldHandlers) {
-		activeField := fieldHandlers[section.indexActiveEditField]
+	fieldHandlers := section.FieldHandlers
+	if len(fieldHandlers) > 0 && section.IndexActiveEditField < len(fieldHandlers) {
+		activeField := fieldHandlers[section.IndexActiveEditField]
 		if activeField.hasContentMethod() {
 			displayContent := activeField.getDisplayContent()
 			if displayContent != "" {
@@ -109,7 +109,7 @@ func (h *DevTUI) headerView() string {
 	tab := h.TabSections[h.activeTab]
 
 	// Truncar el título si es necesario
-	leftText := h.AppName + "/" + tab.title
+	leftText := h.AppName + "/" + tab.Title
 	rightText := ""
 	if h.AppVersion != "" {
 		rightText = h.AppVersion

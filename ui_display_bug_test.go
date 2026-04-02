@@ -37,7 +37,7 @@ func TestUIDisplayBug(t *testing.T) {
 		// Navigate to Server tab
 		tui.activeTab = 1 // Skip SHORTCUTS tab
 		tabSection := tab.(*tabSection)
-		portField := tabSection.fieldHandlers[0]
+		portField := tabSection.FieldHandlers[0]
 
 		t.Logf("=== REPRODUCING UI DISPLAY BUG ===")
 		t.Logf("Step 1: Initial value - field.Value(): '%s'", portField.Value())
@@ -118,7 +118,7 @@ func TestUIDisplayBug(t *testing.T) {
 		tui.activeTab = 1
 
 		tabSection := tab.(*tabSection)
-		portField := tabSection.fieldHandlers[0]
+		portField := tabSection.FieldHandlers[0]
 
 		// Manually update the handler (simulating successful change)
 		t.Logf("Before manual update - field.Value(): '%s'", portField.Value())

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/mcp"
 )
 
 func TestGetSectionLogsPlainNoANSI(t *testing.T) {
@@ -79,19 +80,13 @@ func TestGetMCPToolsMetadata(t *testing.T) {
 		t.Errorf("Expected tool name '%s', got '%s'", MCPToolName, tool.Name)
 	}
 
-	// Verify parameter has enum values
-	if len(tool.Parameters) != 1 {
-		t.Fatalf("Expected 1 parameter, got %d", len(tool.Parameters))
+	// Verify InputSchema is not empty
+	if tool.InputSchema == "" {
+		t.Error("Expected tool.InputSchema to be populated")
 	}
 
-	param := tool.Parameters[0]
-	if param.Name != "section" {
-		t.Errorf("Expected parameter name 'section', got '%s'", param.Name)
-	}
-
-	// Should have section titles as enum values (SHORTCUTS + BUILD + DEPLOY = 3)
-	if len(param.EnumValues) < 3 {
-		t.Errorf("Expected at least 3 enum values, got %d: %v", len(param.EnumValues), param.EnumValues)
+	if !strings.Contains(tool.InputSchema, "section") {
+		t.Errorf("Expected InputSchema to contain 'section', got: %s", tool.InputSchema)
 	}
 
 	close(exitChan)
@@ -129,14 +124,14 @@ func TestMCPGetSectionLogsListsSections(t *testing.T) {
 	tui.NewTabSection("DEPLOY", "Deploy Section")
 
 	// Call tool with empty section (should list sections)
-	tui.mcpGetSectionLogs(map[string]any{"section": ""})
+	result := tui.mcpGetSectionLogs(GetLogsArgs{Section: ""})
 
-	// Verify logger received the message
-	if len(loggedMessages) == 0 {
-		t.Fatal("Expected logger to receive messages")
+	// Verify result
+	if result == nil {
+		t.Fatal("Expected non-nil result from mcpGetSectionLogs")
 	}
 
-	resultStr := loggedMessages[0]
+	resultStr, _ := mcp.GetText(result)
 	if !strings.Contains(resultStr, "Available sections:") {
 		t.Errorf("Result should list available sections:\n%s", resultStr)
 	}

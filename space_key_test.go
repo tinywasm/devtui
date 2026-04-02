@@ -30,12 +30,12 @@ func setupTestWithEditableField(t *testing.T) (*DevTUI, *field) {
 	}
 
 	tabSection := h.TabSections[testTabIndex]
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Enter editing mode on the correct tab
 	h.activeTab = testTabIndex
 	h.editModeActivated = true
-	h.TabSections[testTabIndex].indexActiveEditField = 0
+	h.TabSections[testTabIndex].IndexActiveEditField = 0
 
 	// Clear field and reset cursor
 	field.tempEditValue = ""

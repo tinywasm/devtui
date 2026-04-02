@@ -2,12 +2,12 @@ package devtui
 
 import (
 	"bufio"
-	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/tinywasm/context"
 	. "github.com/tinywasm/fmt"
 	"github.com/tinywasm/mcp"
 )
@@ -157,7 +157,7 @@ func (h *DevTUI) handleLogEvent(data string) {
 
 	var section *tabSection
 	for _, s := range h.TabSections {
-		if s.title == dto.TabTitle {
+		if s.Title == dto.TabTitle {
 			section = s
 			break
 		}
@@ -195,19 +195,19 @@ func (h *DevTUI) handleLogEvent(data string) {
 // Called before applying a new state event so stale remote handlers don't accumulate.
 func (h *DevTUI) clearRemoteHandlers() {
 	for _, s := range h.TabSections {
-		filtered := s.fieldHandlers[:0]
-		for _, f := range s.fieldHandlers {
+		filtered := s.FieldHandlers[:0]
+		for _, f := range s.FieldHandlers {
 			if !f.isRemote {
 				filtered = append(filtered, f)
 			}
 		}
-		s.fieldHandlers = filtered
+		s.FieldHandlers = filtered
 	}
 }
 
 // fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers via JSON-RPC.
 func (h *DevTUI) fetchAndReconstructState() {
-	h.mcpClient().Call(context.Background(), "tinywasm/state", map[string]string{}, func(result []byte, err error) {
+	h.mcpClient().Call(context.Background(), "tinywasm/state", nil, func(result []byte, err error) {
 		if err != nil || result == nil {
 			return
 		}
@@ -226,7 +226,7 @@ func (h *DevTUI) reconstructRemoteHandlers(entries []StateEntry) {
 	for _, entry := range entries {
 		var section *tabSection
 		for _, s := range h.TabSections {
-			if s.title == entry.TabTitle {
+			if s.Title == entry.TabTitle {
 				section = s
 				break
 			}

@@ -29,7 +29,7 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 
 		// Get the port field
 		serverTabSection := serverTab.(*tabSection)
-		portField := serverTabSection.fieldHandlers[0]
+		portField := serverTabSection.FieldHandlers[0]
 
 		// Verify initial state
 		initialValue := portField.Value()
@@ -162,7 +162,7 @@ func TestDisplayedValueInUI(t *testing.T) {
 		tui.activeTab = serverTabIndex
 
 		serverTabSection := serverTab.(*tabSection)
-		portField := serverTabSection.fieldHandlers[0]
+		portField := serverTabSection.FieldHandlers[0]
 
 		// Simulate the editing process realistically
 		// 1. Enter edit mode

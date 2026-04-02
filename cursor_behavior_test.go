@@ -22,7 +22,7 @@ func TestCursorBehaviorInEditMode(t *testing.T) {
 		serverTabIndex := len(h.TabSections) - 1
 		h.activeTab = serverTabIndex
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Enter edit mode
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})

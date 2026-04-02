@@ -19,14 +19,14 @@ func (h *DevTUI) footerView() string {
 	}
 
 	// Si hay campos disponibles, mostrar el input (independiente de si estamos en modo edición)
-	if len(h.TabSections[h.activeTab].fieldHandlers) > 0 {
+	if len(h.TabSections[h.activeTab].FieldHandlers) > 0 {
 		return h.renderFooterInput()
 	}
 
 	// Si no hay campos, mostrar paginación de writers-only y scrollbar estándar
 	tabSection := h.TabSections[h.activeTab]
-	fieldHandlers := tabSection.fieldHandlers
-	currentField := tabSection.indexActiveEditField
+	fieldHandlers := tabSection.FieldHandlers
+	currentField := tabSection.IndexActiveEditField
 	totalFields := len(fieldHandlers)
 	if currentField > 99 || totalFields > 99 {
 		if h.Logger != nil {
@@ -92,19 +92,19 @@ func (h *DevTUI) renderFooterInput() string {
 	tabSection := h.TabSections[h.activeTab]
 
 	// Verificar que el índice activo esté en rango
-	fieldHandlers := tabSection.fieldHandlers
-	if tabSection.indexActiveEditField >= len(fieldHandlers) {
-		tabSection.indexActiveEditField = 0 // Reiniciar a 0 si está fuera de rango
+	fieldHandlers := tabSection.FieldHandlers
+	if tabSection.IndexActiveEditField >= len(fieldHandlers) {
+		tabSection.IndexActiveEditField = 0 // Reiniciar a 0 si está fuera de rango
 	}
 
-	field := fieldHandlers[tabSection.indexActiveEditField]
+	field := fieldHandlers[tabSection.IndexActiveEditField]
 	info := h.renderScrollInfo()
 	horizontalPadding := 1
 
 	// Check if this handler uses expanded footer (Display only)
 	if field.isDisplayOnly() {
 		// Pagination logic
-		currentField := tabSection.indexActiveEditField
+		currentField := tabSection.IndexActiveEditField
 		totalFields := len(fieldHandlers)
 		if currentField > 99 || totalFields > 99 {
 			if h.Logger != nil {
@@ -134,7 +134,7 @@ func (h *DevTUI) renderFooterInput() string {
 		// El valor usa todo el espacio disponible, sin label separado
 
 		// Calcular la paginación PRIMERO para incluirla en el cálculo del ancho
-		currentField := tabSection.indexActiveEditField
+		currentField := tabSection.IndexActiveEditField
 		totalFields := len(fieldHandlers)
 		if currentField > 99 || totalFields > 99 {
 			if h.Logger != nil {
@@ -199,7 +199,7 @@ func (h *DevTUI) renderFooterInput() string {
 	paddedLabel := h.headerTitleStyle.Render(fixedWidthLabel)
 
 	// Calcular la paginación PRIMERO para incluirla en el cálculo del ancho
-	currentField := tabSection.indexActiveEditField
+	currentField := tabSection.IndexActiveEditField
 	totalFields := len(fieldHandlers)
 	if currentField > 99 || totalFields > 99 {
 		if h.Logger != nil {

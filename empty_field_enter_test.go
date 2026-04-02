@@ -24,7 +24,7 @@ func TestEmptyFieldEnterBehavior(t *testing.T) {
 		// Use centralized function to get correct tab index
 		testTabIndex := GetFirstTestTabIndex()
 		tabSection := h.TabSections[testTabIndex]
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// The field already has "initial test value" from DefaultTUIForTest
 		// No need to set it again as SetValue is deprecated
@@ -86,7 +86,7 @@ func TestEmptyFieldEnterBehavior(t *testing.T) {
 		testTabIndex := GetFirstTestTabIndex()
 		tabSection := h.TabSections[testTabIndex]
 
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Switch to test tab and enter editing mode
 		h.activeTab = testTabIndex

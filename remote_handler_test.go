@@ -12,7 +12,7 @@ import (
 func TestRemoteField_RegistersShortcuts(t *testing.T) {
 	tui := &DevTUI{
 		shortcutRegistry: newShortcutRegistry(),
-		TabSections:      []*tabSection{{index: 0, title: "BUILD"}},
+		TabSections:      []*tabSection{{Index: 0, Title: "BUILD"}},
 	}
 
 	entry := StateEntry{
@@ -65,7 +65,7 @@ func TestRemoteField_DispatchesWithHandlerName(t *testing.T) {
 		Value:       "M",
 	}
 
-	section := &tabSection{index: 0, title: "BUILD"}
+	section := &tabSection{Index: 0, Title: "BUILD"}
 	// Pass nil client to avoid dispatch calls; we just verify field construction
 	f := newRemoteField(entry, nil, section, nil)
 

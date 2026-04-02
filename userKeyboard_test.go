@@ -19,8 +19,8 @@ func prepareFieldForEditing(t *testing.T, h *DevTUI) *field {
 	h.activeTab = testTabIndex
 	h.editModeActivated = true
 	tabSection := h.TabSections[testTabIndex]
-	tabSection.indexActiveEditField = 0
-	field := tabSection.fieldHandlers[0] // Usar field existente del DefaultTUIForTest
+	tabSection.IndexActiveEditField = 0
+	field := tabSection.FieldHandlers[0] // Usar field existente del DefaultTUIForTest
 	field.tempEditValue = field.Value() // Inicializar tempEditValue con el valor actual
 	field.cursor = 0                    // Inicializar cursor
 	return field
@@ -65,7 +65,7 @@ func TestHandleKeyboard(t *testing.T) {
 	t.Run("Editing mode - Escape key", func(t *testing.T) {
 		// Setup: Enter editing mode first
 		h.editModeActivated = true
-		h.TabSections[0].indexActiveEditField = 0
+		h.TabSections[0].IndexActiveEditField = 0
 
 		continueParsing, _ := h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEsc})
 
@@ -98,7 +98,7 @@ func TestHandleKeyboard(t *testing.T) {
 		testTabIndex := GetFirstTestTabIndex()
 		h.activeTab = testTabIndex
 		tabSection := h.TabSections[testTabIndex]
-		field := tabSection.fieldHandlers[0] // TestEditableHandler with "initial test value"
+		field := tabSection.FieldHandlers[0] // TestEditableHandler with "initial test value"
 
 		// Simular que el usuario entra en modo edición presionando Enter
 		// Esto debería inicializar tempEditValue con el valor actual
@@ -242,8 +242,8 @@ func TestHandleKeyboard(t *testing.T) {
 		h.activeTab = testTabIndex
 		h.editModeActivated = true
 		tabSection := h.TabSections[testTabIndex]
-		tabSection.indexActiveEditField = 0
-		field := tabSection.fieldHandlers[0]
+		tabSection.IndexActiveEditField = 0
+		field := tabSection.FieldHandlers[0]
 		originalValue := "test"
 
 		// Usar helper para simular edición (ya que tempEditValue es privado)
@@ -332,8 +332,8 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 		h.activeTab = testTabIndex
 		h.editModeActivated = true
 		tabSection := h.TabSections[testTabIndex]
-		tabSection.indexActiveEditField = 0
-		field := tabSection.fieldHandlers[0]
+		tabSection.IndexActiveEditField = 0
+		field := tabSection.FieldHandlers[0]
 
 		// Los handlers centralizados ya tienen valores iniciales configurados
 		// No necesitamos modificar el valor directamente ya que los handlers son inmutables
@@ -373,26 +373,26 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 	t.Run("Arrow keys in normal mode", func(t *testing.T) {
 		// Configuración inicial - normal mode
 		h.editModeActivated = false
-		h.TabSections[0].indexActiveEditField = 0
-		initialIndex := h.TabSections[0].indexActiveEditField
+		h.TabSections[0].IndexActiveEditField = 0
+		initialIndex := h.TabSections[0].IndexActiveEditField
 
 		// Intentar navegar con flechas up o down - no debería cambiar inputs
 		continueParsing, _ := h.handleKeyboard(tea.KeyMsg{Type: tea.KeyDown})
 		if !continueParsing {
 			t.Errorf("Expected continueParsing to be true after Down key")
 		}
-		if h.TabSections[0].indexActiveEditField != initialIndex {
+		if h.TabSections[0].IndexActiveEditField != initialIndex {
 			t.Errorf("Expected indexActiveEditField to remain %d, but got %d",
-				initialIndex, h.TabSections[0].indexActiveEditField)
+				initialIndex, h.TabSections[0].IndexActiveEditField)
 		}
 
 		continueParsing, _ = h.handleKeyboard(tea.KeyMsg{Type: tea.KeyUp})
 		if !continueParsing {
 			t.Errorf("Expected continueParsing to be true after Up key")
 		}
-		if h.TabSections[0].indexActiveEditField != initialIndex {
+		if h.TabSections[0].IndexActiveEditField != initialIndex {
 			t.Errorf("Expected indexActiveEditField to remain %d, but got %d",
-				initialIndex, h.TabSections[0].indexActiveEditField)
+				initialIndex, h.TabSections[0].IndexActiveEditField)
 		}
 	})
 
@@ -415,8 +415,8 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 		h.activeTab = testTabIndex
 		h.editModeActivated = true
 		tabSection := h.TabSections[testTabIndex]
-		tabSection.indexActiveEditField = 0
-		field := tabSection.fieldHandlers[0]
+		tabSection.IndexActiveEditField = 0
+		field := tabSection.FieldHandlers[0]
 		setTempEditValueForTest(field, "hello") // Inicializar tempEditValue
 		setCursorForTest(field, 2)              // Cursor en medio (he|llo)
 

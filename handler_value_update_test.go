@@ -83,7 +83,7 @@ func TestHandlerValueUpdateAfterEdit(t *testing.T) {
 
 		// Get the field
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Verify initial state
 		initialValue := field.Value()
@@ -165,7 +165,7 @@ func TestHandlerValueUpdateAfterEdit(t *testing.T) {
 
 		// Get the field
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Realistic: User presses Enter to enter edit mode
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
