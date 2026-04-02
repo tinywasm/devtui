@@ -3,8 +3,7 @@
 package devtui
 
 import (
-	"context"
-
+	"github.com/tinywasm/context"
 	"github.com/tinywasm/mcp"
 )
 
@@ -71,8 +70,8 @@ func newRemoteField(entry StateEntry, client *mcp.Client, ts *tabSection, tui *D
 
 	// Register shortcuts from StateEntry.Shortcuts in the TUI's registry
 	if tui != nil && tui.shortcutRegistry != nil && len(e.Shortcuts) > 0 {
-		fieldIndex := len(ts.fieldHandlers)
-		tabIndex := ts.index
+		fieldIndex := len(ts.FieldHandlers)
+		tabIndex := ts.Index
 		for _, m := range e.Shortcuts {
 			for key := range m {
 				entry := &ShortcutEntry{
@@ -96,8 +95,8 @@ func postAction(client *mcp.Client, shortcut, value string) {
 	if shortcut == "" || client == nil {
 		return
 	}
-	client.Dispatch(context.Background(), "tinywasm/action", map[string]string{
-		"key":   shortcut,
-		"value": value,
+	client.Dispatch(context.Background(), "tinywasm/action", &ActionArgs{
+		Key:   shortcut,
+		Value: value,
 	})
 }

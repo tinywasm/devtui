@@ -10,6 +10,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	tinyfmt "github.com/tinywasm/fmt"
+	tinyjson "github.com/tinywasm/json"
 )
 
 func TestClientModeSSE(t *testing.T) {
@@ -67,8 +68,8 @@ func TestClientModeSSE(t *testing.T) {
 		if msg.Content != "Hello from Server" {
 			t.Errorf("Expected content 'Hello from Server', got '%s'", msg.Content)
 		}
-		if msg.tabSection.title != "SHORTCUTS" {
-			t.Errorf("Expected tab 'SHORTCUTS', got '%s'", msg.tabSection.title)
+		if msg.tabSection.Title != "SHORTCUTS" {
+			t.Errorf("Expected tab 'SHORTCUTS', got '%s'", msg.tabSection.Title)
 		}
 	case <-time.After(2 * time.Second):
 		t.Error("Timeout waiting for SSE message")
@@ -85,12 +86,14 @@ func TestClientModeKeyboard(t *testing.T) {
 	actionServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/mcp" {
 			var body struct {
-				Method string            `json:"method"`
-				Params map[string]string `json:"params"`
+				Method string `json:"method"`
+				Params string `json:"params"`
 			}
 			json.NewDecoder(r.Body).Decode(&body)
 			if body.Method == "tinywasm/action" {
-				actionReceived <- body.Params["key"]
+				var args ActionArgs
+				tinyjson.Decode([]byte(body.Params), &args)
+				actionReceived <- args.Key
 			}
 		}
 		w.WriteHeader(200)
@@ -176,8 +179,8 @@ func TestSSEConnect_NoAPIKey_NoAuthHeader(t *testing.T) {
 
 func TestPostAction_SendsJSONRPCAction(t *testing.T) {
 	type rpcRequest struct {
-		Method string            `json:"method"`
-		Params map[string]string `json:"params"`
+		Method string `json:"method"`
+		Params string `json:"params"`
 	}
 	requestChan := make(chan rpcRequest, 1)
 
@@ -202,11 +205,14 @@ func TestPostAction_SendsJSONRPCAction(t *testing.T) {
 		if req.Method != "tinywasm/action" {
 			t.Errorf("Expected method 'tinywasm/action', got '%s'", req.Method)
 		}
-		if req.Params["key"] != "ctrl+s" {
-			t.Errorf("Expected key 'ctrl+s', got '%s'", req.Params["key"])
+		var args ActionArgs
+		tinyjson.Decode([]byte(req.Params), &args)
+
+		if args.Key != "ctrl+s" {
+			t.Errorf("Expected key 'ctrl+s', got '%s'", args.Key)
 		}
-		if req.Params["value"] != "save-value" {
-			t.Errorf("Expected value 'save-value', got '%s'", req.Params["value"])
+		if args.Value != "save-value" {
+			t.Errorf("Expected value 'save-value', got '%s'", args.Value)
 		}
 	case <-time.After(2 * time.Second):
 		t.Error("Timeout waiting for action request")

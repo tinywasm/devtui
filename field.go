@@ -31,12 +31,12 @@ func (f *field) setCursorForTest(cursor int) {
 // setFieldHandlers sets the field handlers slice (mainly for testing)
 // Only for internal/test use
 func (ts *tabSection) setFieldHandlers(handlers []*field) {
-	ts.fieldHandlers = handlers
+	ts.FieldHandlers = handlers
 }
 
 // addFields adds one or more field handlers to the section (private)
 func (ts *tabSection) addFields(fields ...*field) {
-	ts.fieldHandlers = append(ts.fieldHandlers, fields...)
+	ts.FieldHandlers = append(ts.FieldHandlers, fields...)
 }
 
 func (f *field) Value() string {

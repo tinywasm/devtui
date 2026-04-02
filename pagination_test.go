@@ -67,11 +67,11 @@ func TestPaginationDisplay(t *testing.T) {
 		}
 		h.activeTab = 0
 		tabSection := tab.(*tabSection)
-		if tc.activeField < len(tabSection.fieldHandlers) {
+		if tc.activeField < len(tabSection.FieldHandlers) {
 			tabSection.setActiveEditField(tc.activeField)
 		}
 		currentField := tc.activeField
-		totalFields := len(tabSection.fieldHandlers)
+		totalFields := len(tabSection.FieldHandlers)
 		displayCurrent := min(currentField, 99) + 1
 		displayTotal := min(totalFields, 99)
 		pagination := fmt.Sprintf("[%2d/%2d]", displayCurrent, displayTotal)

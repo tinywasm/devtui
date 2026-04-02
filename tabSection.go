@@ -31,13 +31,13 @@ type tabContent struct {
 
 // tabSection represents a tab section in the TUI with configurable fields and content
 type tabSection struct {
-	index              int      // index of the tab
-	title              string   // eg: "BUILD", "TEST"
-	fieldHandlers      []*field // Field actions configured for the section
-	sectionDescription string   // eg: "Press 't' to compile", "Press 'r' to run tests"
+	Index              int      // index of the tab
+	Title              string   // eg: "BUILD", "TEST"
+	FieldHandlers      []*field // Field actions configured for the section
+	SectionDescription string   // eg: "Press 't' to compile", "Press 'r' to run tests"
 	// internal use
 	tabContents          []tabContent // message contents
-	indexActiveEditField int          // Índice del campo de configuración seleccionado
+	IndexActiveEditField int          // Índice del campo de configuración seleccionado
 	tui                  *DevTUI
 	mu                   sync.RWMutex // Para proteger tabContents y writingHandlers de race conditions
 
@@ -156,8 +156,8 @@ func (t *tabSection) updateOrAddContentWithHandler(msgType MessageType, content 
 //	tui.AddHandler(myHandler, 2*time.Second, "#3b82f6", tab)
 func (t *DevTUI) NewTabSection(title, description string) any {
 	tab := &tabSection{
-		title:              title,
-		sectionDescription: description,
+		Title:              title,
+		SectionDescription: description,
 		tui:                t,
 		animationStopChans: make(map[string]chan struct{}),
 	}
@@ -200,7 +200,7 @@ func (t *DevTUI) notifyTabActive(tabIndex int) {
 	notified := make(map[any]bool)
 
 	// Notify all field handlers
-	for _, f := range tab.fieldHandlers {
+	for _, f := range tab.FieldHandlers {
 		if f.handler != nil && f.handler.origHandler != nil {
 			if aware, ok := f.handler.origHandler.(TabAware); ok {
 				if !notified[aware] {
@@ -226,16 +226,16 @@ func (t *DevTUI) notifyTabActive(tabIndex int) {
 
 // setActiveEditField sets the active edit field index
 func (ts *tabSection) setActiveEditField(idx int) {
-	ts.indexActiveEditField = idx
+	ts.IndexActiveEditField = idx
 }
 
 // Helper method to initialize a single tabSection
 func (t *DevTUI) initTabSection(section *tabSection, index int) {
-	section.index = index
+	section.Index = index
 	section.tui = t
 
 	// Initialize field handlers
-	handlers := section.fieldHandlers
+	handlers := section.FieldHandlers
 	for j := range handlers {
 		handlers[j].index = j
 		handlers[j].cursor = 0

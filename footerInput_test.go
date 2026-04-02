@@ -19,7 +19,7 @@ func TestFooterView(t *testing.T) {
 	t.Run("Footer with no fields shows scrollbar", func(t *testing.T) {
 		// Guardar estado actual para restaurar después de la prueba
 		tab := h.TabSections[h.activeTab]
-		originalFields := tab.fieldHandlers
+		originalFields := tab.FieldHandlers
 
 		// Configurar pestaña sin fields
 		tab.setFieldHandlers([]*field{})
@@ -54,13 +54,13 @@ func TestFooterView(t *testing.T) {
 		// Desactivar modo edición para verificar que aún así se muestra el campo
 		h.editModeActivated = false
 		tabSection := h.TabSections[h.activeTab]
-		tabSection.indexActiveEditField = 0
+		tabSection.IndexActiveEditField = 0
 
 		// Renderizar footer
 		result := h.footerView()
 
 		// Verificar que contiene la etiqueta y valor del field
-		field := tab.fieldHandlers[0]
+		field := tab.FieldHandlers[0]
 		if !strings.Contains(result, field.Value()) {
 			t.Errorf("El footer debería mostrar:\n%v\n incluso sin estar en modo edición, pero muestra:\n%s\n", field.Value(), result)
 		}
@@ -81,7 +81,7 @@ func TestRenderFooterInput(t *testing.T) {
 		// Set viewport width for proper layout calculation
 		h.viewport.Width = 80
 
-		field := tab.fieldHandlers[0]
+		field := tab.FieldHandlers[0]
 		field.setCursorForTest(2) // Cursor en posición 's': te[s]t value
 		field.setTempEditValueForTest("test value")
 
@@ -119,7 +119,7 @@ func TestRenderFooterInput(t *testing.T) {
 		h.AddHandler(testHandler, "", tab)
 
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Renderizar input
 		result := h.renderFooterInput()
@@ -146,7 +146,7 @@ func TestRenderFooterInput(t *testing.T) {
 		// Set viewport width for proper layout calculation
 		h.viewport.Width = 80
 
-		h.TabSections[h.activeTab].indexActiveEditField = 5 // Índice fuera de rango
+		h.TabSections[h.activeTab].IndexActiveEditField = 5 // Índice fuera de rango
 
 		// Renderizar - no debería producir pánico
 		result := h.renderFooterInput()
@@ -168,7 +168,7 @@ func TestRenderFooterInput(t *testing.T) {
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
 		h.AddHandler(testHandler, "", tab)
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 		h.editModeActivated = false // No en modo edición
 
 		// El estilo debe ser fieldSelectedStyle en vez de fieldEditingStyle
@@ -207,7 +207,7 @@ func TestInputNavigation(t *testing.T) {
 	h.AddHandler(testHandler1, "", tab)
 	h.AddHandler(testHandler2, "", tab)
 	h.AddHandler(testHandler3, "", tab)
-	h.TabSections[h.activeTab].indexActiveEditField = 0
+	h.TabSections[h.activeTab].IndexActiveEditField = 0
 	h.editModeActivated = false
 
 	t.Run("Right key navigates to next field", func(t *testing.T) {
@@ -215,46 +215,46 @@ func TestInputNavigation(t *testing.T) {
 		_, _ = h.handleNormalModeKeyboard(tea.KeyMsg{Type: tea.KeyRight})
 
 		// Verificar que nos movimos al siguiente campo
-		if h.TabSections[h.activeTab].indexActiveEditField != 1 {
+		if h.TabSections[h.activeTab].IndexActiveEditField != 1 {
 			t.Errorf("La tecla derecha debería navegar al siguiente campo, pero se quedó en: %d",
-				h.TabSections[h.activeTab].indexActiveEditField)
+				h.TabSections[h.activeTab].IndexActiveEditField)
 		}
 	})
 
 	t.Run("Left key navigates to previous field", func(t *testing.T) {
 		// Nos aseguramos de estar en el campo del medio
-		h.TabSections[h.activeTab].indexActiveEditField = 1
+		h.TabSections[h.activeTab].IndexActiveEditField = 1
 
 		// Simular pulsación de tecla izquierda
 		_, _ = h.handleNormalModeKeyboard(tea.KeyMsg{Type: tea.KeyLeft})
 
 		// Verificar que nos movimos al campo anterior
-		if h.TabSections[h.activeTab].indexActiveEditField != 0 {
+		if h.TabSections[h.activeTab].IndexActiveEditField != 0 {
 			t.Errorf("La tecla izquierda debería navegar al campo anterior, pero se quedó en: %d",
-				h.TabSections[h.activeTab].indexActiveEditField)
+				h.TabSections[h.activeTab].IndexActiveEditField)
 		}
 	})
 
 	t.Run("Cyclical navigation wraps around at boundaries", func(t *testing.T) {
 		// Ir al primer campo
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Simular pulsación de tecla izquierda (debe ir al último campo)
 		_, _ = h.handleNormalModeKeyboard(tea.KeyMsg{Type: tea.KeyLeft})
 
 		// Verificar que se movió al último campo
-		if h.TabSections[h.activeTab].indexActiveEditField != 2 {
+		if h.TabSections[h.activeTab].IndexActiveEditField != 2 {
 			t.Errorf("La navegación cíclica debería ir al último campo, pero está en: %d",
-				h.TabSections[h.activeTab].indexActiveEditField)
+				h.TabSections[h.activeTab].IndexActiveEditField)
 		}
 
 		// Simular pulsación de tecla derecha (debe volver al primer campo)
 		_, _ = h.handleNormalModeKeyboard(tea.KeyMsg{Type: tea.KeyRight})
 
 		// Verificar que volvió al primer campo
-		if h.TabSections[h.activeTab].indexActiveEditField != 0 {
+		if h.TabSections[h.activeTab].IndexActiveEditField != 0 {
 			t.Errorf("La navegación cíclica debería volver al primer campo, pero está en: %d",
-				h.TabSections[h.activeTab].indexActiveEditField)
+				h.TabSections[h.activeTab].IndexActiveEditField)
 		}
 	})
 
@@ -272,7 +272,7 @@ func TestInputNavigation(t *testing.T) {
 
 		// Asegurar que no estamos en modo edición
 		h.editModeActivated = false
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Simular pulsación de Enter
 		_, _ = h.handleNormalModeKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
@@ -297,7 +297,7 @@ func TestInputNavigation(t *testing.T) {
 
 		// Asegurar que estamos en modo edición
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Simular pulsación de Esc
 		_, _ = h.handleEditingConfigKeyboard(tea.KeyMsg{Type: tea.KeyEscape})
@@ -320,8 +320,8 @@ func TestInputNavigation(t *testing.T) {
 
 		// Configurar para edición
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
-		field := tab.fieldHandlers[0]
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
+		field := tab.FieldHandlers[0]
 		field.setCursorAtEnd()
 		// Move cursor to position 3 for test
 		field.setCursorForTest(3)
@@ -359,7 +359,7 @@ func TestCursorNoExtraSpace(t *testing.T) {
 	testHandler := NewTestEditableHandler("Test", originalText)
 	h.AddHandler(testHandler, "", tab)
 
-	f := tab.fieldHandlers[0]
+	f := tab.FieldHandlers[0]
 	f.setTempEditValueForTest(originalText)
 	f.setCursorForTest(3) // Cursor en medio: val|ue
 
@@ -393,7 +393,7 @@ func TestCursorNoTrail(t *testing.T) {
 	testHandler := NewTestEditableHandler("Path", "abcdef")
 	h.AddHandler(testHandler, "", tab)
 
-	f := tab.fieldHandlers[0]
+	f := tab.FieldHandlers[0]
 	f.setTempEditValueForTest("abcdef")
 	f.setCursorForTest(2) // Cursor en 'c': ab[c]def
 

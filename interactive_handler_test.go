@@ -67,15 +67,15 @@ func TestInteractiveHandler_CursorAtEndAfterStepChange(t *testing.T) {
 
 	// Get tab section properly
 	tabSection := h.TabSections[len(h.TabSections)-1]
-	h.activeTab = tabSection.index
+	h.activeTab = tabSection.Index
 	h.ready = true
 
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Simulate user typing "myapp" and pressing Enter
 	field.tempEditValue = "myapp"
 	h.editModeActivated = true
-	tabSection.indexActiveEditField = 0
+	tabSection.IndexActiveEditField = 0
 
 	// Simulate Enter key
 	msg := tea.KeyMsg{Type: tea.KeyEnter}
@@ -100,15 +100,15 @@ func TestInteractiveHandler_ESCAlwaysClosesEditMode(t *testing.T) {
 
 	// Get tab section properly
 	tabSection := h.TabSections[len(h.TabSections)-1]
-	h.activeTab = tabSection.index
+	h.activeTab = tabSection.Index
 	h.ready = true
 
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Activate edit mode (handler is waiting for user)
 	h.editModeActivated = true
 	field.tempEditValue = "somevalue"
-	tabSection.indexActiveEditField = 0
+	tabSection.IndexActiveEditField = 0
 
 	// Verify handler is still waiting for user
 	if !handler.WaitingForUser() {
@@ -136,15 +136,15 @@ func TestInteractiveHandler_EnterExecutesAndUpdatesTempEditValue(t *testing.T) {
 
 	// Get tab section properly
 	tabSection := h.TabSections[len(h.TabSections)-1]
-	h.activeTab = tabSection.index
+	h.activeTab = tabSection.Index
 	h.ready = true
 
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Simulate user typing "myapp"
 	field.tempEditValue = "myapp"
 	h.editModeActivated = true
-	tabSection.indexActiveEditField = 0
+	tabSection.IndexActiveEditField = 0
 
 	// Simulate Enter key
 	msg := tea.KeyMsg{Type: tea.KeyEnter}
@@ -180,18 +180,18 @@ func TestInteractiveHandler_CursorBlinkingDoesNotShiftLayout(t *testing.T) {
 
 	// Get tab section properly
 	tabSection := h.TabSections[len(h.TabSections)-1]
-	h.activeTab = tabSection.index
+	h.activeTab = tabSection.Index
 	h.ready = true
 	h.viewport.Width = 80
 	h.viewport.Height = 24
 
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Activate edit mode
 	h.editModeActivated = true
 	field.tempEditValue = "Test/myapp"
 	field.cursor = 4 // Cursor in the middle of text
-	tabSection.indexActiveEditField = 0
+	tabSection.IndexActiveEditField = 0
 
 	// Render with cursor visible
 	h.cursorVisible = true
@@ -223,17 +223,17 @@ func TestInteractiveHandler_FullWizardFlow(t *testing.T) {
 
 	// Get tab section properly
 	tabSection := h.TabSections[len(h.TabSections)-1]
-	h.activeTab = tabSection.index
+	h.activeTab = tabSection.Index
 	h.ready = true
 	h.viewport.Width = 80
 	h.viewport.Height = 24
 
-	field := tabSection.fieldHandlers[0]
+	field := tabSection.FieldHandlers[0]
 
 	// Step 1: User types "myapp" and presses Enter
 	field.tempEditValue = "myapp"
 	h.editModeActivated = true
-	tabSection.indexActiveEditField = 0
+	tabSection.IndexActiveEditField = 0
 
 	msg := tea.KeyMsg{Type: tea.KeyEnter}
 	h.handleEditingConfigKeyboard(msg)
@@ -291,5 +291,5 @@ func addInteractiveHandlerForTest(h *DevTUI, tabAny any, handler *TestInteractiv
 		parentTab: ts,
 	}
 
-	ts.fieldHandlers = append(ts.fieldHandlers, f)
+	ts.FieldHandlers = append(ts.FieldHandlers, f)
 }

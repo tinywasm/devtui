@@ -24,12 +24,12 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 
 		// Get the field from the test tab
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Switch to test tab and enter editing mode
 		h.activeTab = len(h.TabSections) - 1 // Use the last added tab
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Initialize editing
 		field.tempEditValue = field.Value()
@@ -69,12 +69,12 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 
 		// Get the field from the test tab
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Switch to test tab and enter editing mode
 		h.activeTab = len(h.TabSections) - 1 // Use the last added tab
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Initialize editing
 		field.tempEditValue = field.Value()
@@ -109,12 +109,12 @@ func TestChangeFuncControlsEmptyFieldBehavior(t *testing.T) {
 
 		// Get the field from the test tab
 		tabSection := tab.(*tabSection)
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// Switch to test tab and enter editing mode
 		h.activeTab = len(h.TabSections) - 1 // Use the last added tab
 		h.editModeActivated = true
-		h.TabSections[h.activeTab].indexActiveEditField = 0
+		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Initialize editing
 		field.tempEditValue = field.Value()

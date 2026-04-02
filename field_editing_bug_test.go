@@ -27,13 +27,13 @@ func TestFieldEditingBugReplication(t *testing.T) {
 		// Use centralized function to get correct tab index
 		testTabIndex := GetFirstTestTabIndex()
 		tabSection := h.TabSections[testTabIndex]
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 		// The field already has "initial test value" from DefaultTUIForTest
 
 		// Switch to the test tab and enter editing mode
 		h.activeTab = testTabIndex
 		h.editModeActivated = true
-		h.TabSections[testTabIndex].indexActiveEditField = 0
+		h.TabSections[testTabIndex].IndexActiveEditField = 0
 
 		// Initialize tempEditValue with the current value (this happens when entering edit mode)
 		field.tempEditValue = field.Value()
@@ -97,7 +97,7 @@ func TestFieldEditingCorrectBehavior(t *testing.T) {
 		// Use centralized function to get correct tab index
 		testTabIndex := GetFirstTestTabIndex()
 		tabSection := h.TabSections[testTabIndex]
-		field := tabSection.fieldHandlers[0]
+		field := tabSection.FieldHandlers[0]
 
 		// The field already has "initial test value" from DefaultTUIForTest
 		// No need to set it again as SetValue is deprecated
@@ -105,7 +105,7 @@ func TestFieldEditingCorrectBehavior(t *testing.T) {
 		// Switch to the test tab and enter editing mode
 		h.activeTab = testTabIndex
 		h.editModeActivated = true
-		h.TabSections[testTabIndex].indexActiveEditField = 0
+		h.TabSections[testTabIndex].IndexActiveEditField = 0
 
 		// Simulate user clearing the field completely
 		field.tempEditValue = ""

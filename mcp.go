@@ -1,7 +1,10 @@
 package devtui
 
 import (
+	"github.com/tinywasm/context"
+	"github.com/tinywasm/fmt"
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/form/input"
 	"github.com/tinywasm/mcp"
 )
 
@@ -27,21 +30,65 @@ func (d *DevTUI) GetMCPTools() []mcp.Tool {
 	}
 	description += ". Pass empty section parameter to list sections with descriptions."
 
+	// Update dynamic schema with section titles
+	args := new(GetLogsArgs)
+	fields := args.Schema()
+	for i := range fields {
+		if fields[i].Name == "section" {
+			s := input.Select()
+			opts := make([]fmt.KeyValue, len(sectionTitles))
+			for j, title := range sectionTitles {
+				opts[j] = fmt.KeyValue{Key: title, Value: title}
+			}
+			if setter, ok := s.(interface{ SetOptions(...fmt.KeyValue) }); ok {
+				setter.SetOptions(opts...)
+			}
+			fields[i].Widget = s
+			break
+		}
+	}
+
+	// Manual JSON encoding for []Field as json.Encode only accepts Fielder
+	schema := "["
+	for i, f := range fields {
+		if i > 0 {
+			schema += ","
+		}
+		schema += Sprintf(`{"name":"%s","type":%d`, f.Name, f.Type)
+		if f.Widget != nil {
+			schema += Sprintf(`,"widget":{"type":"%s"}`, f.Widget.Type())
+			if s, ok := f.Widget.(interface{ GetOptions() []fmt.KeyValue }); ok {
+				opts := s.GetOptions()
+				if len(opts) > 0 {
+					schema += `,"options":[`
+					for j, opt := range opts {
+						if j > 0 {
+							schema += ","
+						}
+						schema += Sprintf(`{"key":"%s","value":"%s"}`, opt.Key, opt.Value)
+					}
+					schema += "]"
+				}
+			}
+		}
+		schema += "}"
+	}
+	schema += "]"
+
 	return []mcp.Tool{
 		{
 			Name:        MCPToolName,
 			Description: description,
-			Parameters: []mcp.Parameter{
-				{
-					Name:        "section",
-					Description: "Section name to get logs from (e.g., BUILD, DEPLOY). Leave empty to list all available sections.",
-					Required:    false,
-					Type:        "string",
-					EnumValues:  sectionTitles,
-					Default:     "",
-				},
+			InputSchema: schema,
+			Resource:    "logs",
+			Action:      'r',
+			Execute: func(ctx *context.Context, req mcp.Request) (*mcp.Result, error) {
+				var args GetLogsArgs
+				if err := req.Bind(&args); err != nil {
+					return nil, err
+				}
+				return d.mcpGetSectionLogs(args), nil
 			},
-			Execute: func(args map[string]any) { d.mcpGetSectionLogs(args) },
 		},
 	}
 }
@@ -68,56 +115,45 @@ func (d *DevTUI) SetLog(log func(message ...any)) {
 func (d *DevTUI) getSectionTitles() []string {
 	titles := make([]string, len(d.TabSections))
 	for i, section := range d.TabSections {
-		titles[i] = section.title
+		titles[i] = section.Title
 	}
 	return titles
 }
 
 // mcpGetSectionLogs implements the terminal_logs tool
-func (d *DevTUI) mcpGetSectionLogs(args map[string]any) {
-	sectionName, _ := args["section"].(string)
+func (d *DevTUI) mcpGetSectionLogs(args GetLogsArgs) *mcp.Result {
+	sectionName := args.Section
 
 	// If no section specified, list available sections
 	if sectionName == "" {
 		var result string
 		result = "Available sections:\n"
 		for _, section := range d.TabSections {
-			result += Sprintf("- %s\n", section.title)
+			result += Sprintf("- %s\n", section.Title)
 		}
-		if d.mcpLogger != nil {
-			d.mcpLogger(result)
-		}
-		return
+		return mcp.Text(result)
 	}
 
 	// Find the requested section
 	var targetSection *tabSection
 	for _, section := range d.TabSections {
-		if section.title == sectionName {
+		if section.Title == sectionName {
 			targetSection = section
 			break
 		}
 	}
 
 	if targetSection == nil {
-		if d.mcpLogger != nil {
-			d.mcpLogger(Sprintf("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles()))
-		}
-		return
+		return mcp.Text(Sprintf("Error: Section '%s' not found. Available sections: %v", sectionName, d.getSectionTitles()))
 	}
 
 	// Get logs in plain format
 	logs := d.getSectionLogsPlain(targetSection)
 	if logs == "" {
-		if d.mcpLogger != nil {
-			d.mcpLogger(Sprintf("Section '%s' has no logs yet.", sectionName))
-		}
-		return
+		return mcp.Text(Sprintf("Section '%s' has no logs yet.", sectionName))
 	}
 
-	if d.mcpLogger != nil {
-		d.mcpLogger(logs)
-	}
+	return mcp.Text(logs)
 }
 
 // getSectionLogsPlain returns the logs of a section without ANSI styling
@@ -134,9 +170,9 @@ func (d *DevTUI) getSectionLogsPlain(section *tabSection) string {
 	var lines []string
 
 	// Add display handler content if available (same as ContentView)
-	fieldHandlers := section.fieldHandlers
-	if len(fieldHandlers) > 0 && section.indexActiveEditField < len(fieldHandlers) {
-		activeField := fieldHandlers[section.indexActiveEditField]
+	fieldHandlers := section.FieldHandlers
+	if len(fieldHandlers) > 0 && section.IndexActiveEditField < len(fieldHandlers) {
+		activeField := fieldHandlers[section.IndexActiveEditField]
 		if activeField.hasContentMethod() {
 			displayContent := activeField.getDisplayContent()
 			if displayContent != "" {

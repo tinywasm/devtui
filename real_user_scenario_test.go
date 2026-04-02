@@ -29,7 +29,7 @@ func TestRealUserScenario(t *testing.T) {
 		serverTabIndex := len(tui.TabSections) - 1
 		tui.activeTab = serverTabIndex
 		serverTabSection := serverTab.(*tabSection)
-		portField := serverTabSection.fieldHandlers[0]
+		portField := serverTabSection.FieldHandlers[0]
 
 		t.Logf("=== SIMULATING USER SCENARIO ===")
 		t.Logf("Step 1: Initial state - field.Value(): '%s'", portField.Value())
@@ -120,7 +120,7 @@ func TestRealUserScenario(t *testing.T) {
 		tui.activeTab = serverTabIndex
 
 		serverTabSection := serverTab.(*tabSection)
-		portField := serverTabSection.fieldHandlers[0]
+		portField := serverTabSection.FieldHandlers[0]
 
 		// Test the UI rendering during different phases
 		t.Logf("=== TESTING UI RENDERING ===")

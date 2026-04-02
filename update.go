@@ -54,7 +54,7 @@ func (h *DevTUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		tc := tabContent(msg)
 
 		// Only update the viewport if the message belongs to the currently active tab
-		if tc.tabSection.index == h.activeTab {
+		if tc.tabSection.Index == h.activeTab {
 			h.updateViewport()
 		}
 

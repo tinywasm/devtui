@@ -1,10 +1,10 @@
 package devtui
 
 import (
-	"context"
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/tinywasm/context"
 )
 
 // handleKeyboard processes keyboard input and updates the model state
@@ -20,8 +20,8 @@ func (h *DevTUI) handleKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 // handleEditingConfigKeyboard handles keyboard input while in config editing mode
 func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 	currentTab := h.TabSections[h.activeTab]
-	fieldHandlers := currentTab.fieldHandlers
-	currentField := fieldHandlers[currentTab.indexActiveEditField]
+	fieldHandlers := currentTab.FieldHandlers
+	currentField := fieldHandlers[currentTab.IndexActiveEditField]
 
 	if currentField.editable() { // Si el campo es editable, permitir la edición
 		// Calcular el ancho máximo disponible para el texto
@@ -165,7 +165,7 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 // handleNormalModeKeyboard handles keyboard input in normal mode (not editing config)
 func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 	currentTab := h.TabSections[h.activeTab]
-	fieldHandlers := currentTab.fieldHandlers
+	fieldHandlers := currentTab.FieldHandlers
 	totalFields := len(fieldHandlers)
 
 	// Client Mode: handle Ctrl+C to stop everything
@@ -173,7 +173,7 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyCtrlC:
 			// Stop project + clean terminal + exit
-			h.mcpClient().Dispatch(context.Background(), "tinywasm/action", map[string]string{"key": "stop", "value": ""})
+			h.mcpClient().Dispatch(context.Background(), "tinywasm/action", &ActionArgs{Key: "stop"})
 			close(h.ExitChan)
 			return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 		}
@@ -195,7 +195,7 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 	case tea.KeyLeft: // Navegar al campo anterior (ciclo continuo)
 		if totalFields > 0 {
-			currentTab.indexActiveEditField = (currentTab.indexActiveEditField - 1 + totalFields) % totalFields
+			currentTab.IndexActiveEditField = (currentTab.IndexActiveEditField - 1 + totalFields) % totalFields
 			h.updateViewport()
 			h.checkAndTriggerInteractiveContent() // NEW: Auto-trigger content for interactive handlers
 			return false, nil                     // Detener procesamiento adicional
@@ -203,7 +203,7 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 	case tea.KeyRight: // Navegar al campo siguiente (ciclo continuo)
 		if totalFields > 0 {
-			currentTab.indexActiveEditField = (currentTab.indexActiveEditField + 1) % totalFields
+			currentTab.IndexActiveEditField = (currentTab.IndexActiveEditField + 1) % totalFields
 			h.updateViewport()
 			h.checkAndTriggerInteractiveContent() // NEW: Auto-trigger content for interactive handlers
 			return false, nil                     // Detener procesamiento adicional
@@ -223,8 +223,8 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 	case tea.KeyEnter: //Enter para entrar en modo edición, ejecuta la acción directamente si el campo no es editable
 		if totalFields > 0 {
-			fieldHandlers := currentTab.fieldHandlers
-			field := fieldHandlers[currentTab.indexActiveEditField]
+			fieldHandlers := currentTab.FieldHandlers
+			field := fieldHandlers[currentTab.IndexActiveEditField]
 			if !field.editable() {
 				// Trigger async operation for non-editable fields
 				if field.handler != nil {
@@ -264,13 +264,13 @@ func (h *DevTUI) checkAndTriggerInteractiveContent() {
 	}
 
 	activeTab := h.TabSections[h.activeTab]
-	fieldHandlers := activeTab.fieldHandlers
+	fieldHandlers := activeTab.FieldHandlers
 
-	if len(fieldHandlers) == 0 || activeTab.indexActiveEditField >= len(fieldHandlers) {
+	if len(fieldHandlers) == 0 || activeTab.IndexActiveEditField >= len(fieldHandlers) {
 		return
 	}
 
-	activeField := fieldHandlers[activeTab.indexActiveEditField]
+	activeField := fieldHandlers[activeTab.IndexActiveEditField]
 	if activeField != nil && activeField.isInteractiveHandler() {
 		// Auto-activate edit mode if handler requested it
 		if !h.editModeActivated && activeField.shouldAutoActivateEditMode() {
@@ -296,7 +296,7 @@ func (h *DevTUI) executeShortcut(entry *ShortcutEntry) (bool, tea.Cmd) {
 	}
 
 	targetTab := h.TabSections[entry.TabIndex]
-	fieldHandlers := targetTab.fieldHandlers
+	fieldHandlers := targetTab.FieldHandlers
 	if entry.FieldIndex >= len(fieldHandlers) {
 		if h.Logger != nil {
 			h.Logger("Shortcut error: invalid field index", entry.FieldIndex)
@@ -313,7 +313,7 @@ func (h *DevTUI) executeShortcut(entry *ShortcutEntry) (bool, tea.Cmd) {
 	}
 
 	// Set active field
-	targetTab.indexActiveEditField = entry.FieldIndex
+	targetTab.IndexActiveEditField = entry.FieldIndex
 
 	// Execute the Change method with shortcut value
 	if targetField.handler != nil {

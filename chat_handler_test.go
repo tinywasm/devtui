@@ -191,7 +191,7 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		chatTabIndex := len(tui.TabSections) - 1
 		tui.activeTab = chatTabIndex
 		chatTabSection := chatTab.(*tabSection)
-		chatField := chatTabSection.fieldHandlers[0]
+		chatField := chatTabSection.FieldHandlers[0]
 
 		t.Logf("=== TESTING UI RENDERING AND EDIT MODE ===")
 

@@ -118,7 +118,7 @@ func (ts *tabSection) registerEditHandler(handler HandlerEdit, color string) {
 	ts.addFields(f)
 
 	// Check for shortcut support
-	ts.registerShortcutsIfSupported(handler, len(ts.fieldHandlers)-1)
+	ts.registerShortcutsIfSupported(handler, len(ts.FieldHandlers)-1)
 }
 
 func (ts *tabSection) registerExecutionHandler(handler HandlerExecution, color string) {
@@ -261,7 +261,7 @@ func (ts *tabSection) registerShortcutsIfSupported(handler HandlerEdit, fieldInd
 				entry := &ShortcutEntry{
 					Key:         key,
 					Description: description,
-					TabIndex:    ts.index,
+					TabIndex:    ts.Index,
 					FieldIndex:  fieldIndex,
 					HandlerName: handler.Name(),
 					Value:       key, // Use the key as the value by default
