@@ -8,7 +8,7 @@ require (
 	github.com/tinywasm/fmt v0.22.1
 	github.com/tinywasm/form v0.2.0
 	github.com/tinywasm/json v0.4.0
-	github.com/tinywasm/time v0.3.1
+	github.com/tinywasm/time v0.4.0
 )
 
 require (
