@@ -20,7 +20,7 @@ func prepareFieldForEditing(t *testing.T, h *DevTUI) *field {
 	h.editModeActivated = true
 	tabSection := h.TabSections[testTabIndex]
 	tabSection.IndexActiveEditField = 0
-	field := tabSection.FieldHandlers[0] // Usar field existente del DefaultTUIForTest
+	field := tabSection.FieldHandlers[0]
 	field.tempEditValue = field.Value() // Inicializar tempEditValue con el valor actual
 	field.cursor = 0                    // Inicializar cursor
 	return field
@@ -64,6 +64,7 @@ func TestHandleKeyboard(t *testing.T) {
 	// Test case: Editing mode, pressing escape to exit
 	t.Run("Editing mode - Escape key", func(t *testing.T) {
 		// Setup: Enter editing mode first
+		h.activeTab = 0
 		h.editModeActivated = true
 		h.TabSections[0].IndexActiveEditField = 0
 
@@ -325,8 +326,8 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 		tab := h.NewTabSection("Test Tab", "Test description")
 		h.AddHandler(testHandler, "", tab)
 
-		// Use the correct tab (index 1, not 0 which is SHORTCUTS)
-		testTabIndex := 1
+		// Use the correct tab
+		testTabIndex := GetFirstTestTabIndex()
 
 		// Setup: Enter editing mode on the correct tab
 		h.activeTab = testTabIndex
@@ -372,6 +373,7 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 	// Test: Navegación entre campos con flechas up y down no afecta a los inputs
 	t.Run("Arrow keys in normal mode", func(t *testing.T) {
 		// Configuración inicial - normal mode
+		h.activeTab = 0
 		h.editModeActivated = false
 		h.TabSections[0].IndexActiveEditField = 0
 		initialIndex := h.TabSections[0].IndexActiveEditField
@@ -409,7 +411,7 @@ func TestAdditionalKeyboardFeatures(t *testing.T) {
 		h.AddHandler(testHandler, "", tab)
 
 		// Use centralized function to get correct tab index
-		testTabIndex := 1
+		testTabIndex := GetFirstTestTabIndex()
 
 		// Configuración inicial - modo edición en el tab correcto
 		h.activeTab = testTabIndex

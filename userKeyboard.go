@@ -19,6 +19,9 @@ func (h *DevTUI) handleKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 // handleEditingConfigKeyboard handles keyboard input while in config editing mode
 func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
+	if len(h.TabSections) == 0 {
+		return true, nil
+	}
 	currentTab := h.TabSections[h.activeTab]
 	fieldHandlers := currentTab.FieldHandlers
 	currentField := fieldHandlers[currentTab.IndexActiveEditField]
@@ -164,10 +167,6 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 // handleNormalModeKeyboard handles keyboard input in normal mode (not editing config)
 func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
-	currentTab := h.TabSections[h.activeTab]
-	fieldHandlers := currentTab.FieldHandlers
-	totalFields := len(fieldHandlers)
-
 	// Client Mode: handle Ctrl+C to stop everything
 	if h.ClientMode && h.ClientURL != "" {
 		switch msg.Type {
@@ -178,6 +177,20 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 			return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 		}
 	}
+
+	if msg.Type == tea.KeyCtrlC {
+		close(h.ExitChan) // Cerrar el canal para señalizar a todas las goroutines
+		// Usar tea.Sequence para asegurar que ExitAltScreen se ejecute antes de Quit
+		return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
+	}
+
+	if len(h.TabSections) == 0 {
+		return true, nil
+	}
+
+	currentTab := h.TabSections[h.activeTab]
+	fieldHandlers := currentTab.FieldHandlers
+	totalFields := len(fieldHandlers)
 
 	switch msg.Type {
 	case tea.KeyUp, tea.KeyDown:
@@ -248,10 +261,6 @@ func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 			}
 		}
 
-	case tea.KeyCtrlC:
-		close(h.ExitChan) // Cerrar el canal para señalizar a todas las goroutines
-		// Usar tea.Sequence para asegurar que ExitAltScreen se ejecute antes de Quit
-		return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
 	}
 
 	return true, nil
