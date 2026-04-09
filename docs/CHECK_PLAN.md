@@ -69,9 +69,9 @@ Verificar que ningún test dependa de que SHORTCUTS exista antes de llamar `Star
 
 ## Pasos de Ejecución
 
-- [ ] **Step 1** — Remover `createShortcutsTab(tui)` de `NewTUI()` en `init.go:127`
-- [ ] **Step 2** — Agregar `createShortcutsTab(h)` en `Start()` en `init.go`, antes de `h.tea.Run()`
-- [ ] **Step 3** — Correr tests: `go test ./...`
+- [x] **Step 1** — Remover `createShortcutsTab(tui)` de `NewTUI()` en `init.go:127`
+- [x] **Step 2** — Agregar `createShortcutsTab(h)` en `Start()` en `init.go`, antes de `h.tea.Run()`
+- [x] **Step 3** — Correr tests: `go test ./...`
 
 
 ## Notas
