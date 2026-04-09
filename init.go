@@ -123,9 +123,6 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		testMode:         c.TestMode,
 	}
 
-	// Always add SHORTCUTS tab first
-	createShortcutsTab(tui)
-
 	// FIXED: Removed manual content sending to prevent duplication
 	// HandlerDisplay automatically shows Content() when field is selected
 	// No need for manual sendMessageWithHandler() call
@@ -171,6 +168,19 @@ func (h *DevTUI) Start(args ...any) {
 			defer wg.Done()
 			break
 		}
+	}
+
+	// Add SHORTCUTS tab last, after all user tabs are registered
+	// Only add if it doesn't already exist (idempotency)
+	shortcutsExists := false
+	for _, tab := range h.TabSections {
+		if tab.Title == "SHORTCUTS" {
+			shortcutsExists = true
+			break
+		}
+	}
+	if !shortcutsExists {
+		createShortcutsTab(h)
 	}
 
 	// NEW: Trigger initial content display for interactive handlers

@@ -11,7 +11,7 @@ import (
 // This centralizes the index calculation to avoid test failures when tabs are added/removed
 // Currently, NewTUI always adds SHORTCUTS tab at index 0, so test tabs start at index 1
 func GetFirstTestTabIndex() int {
-	return 1 // SHORTCUTS tab is always at index 0, so first test tab is at index 1
+	return 0 // First test tab is at index 0
 }
 
 // GetSecondTestTabIndex returns the index of the second test tab

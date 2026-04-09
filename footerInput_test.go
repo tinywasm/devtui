@@ -11,14 +11,12 @@ import (
 
 // TestFooterView verifica el comportamiento del renderizado del footer
 func TestFooterView(t *testing.T) {
-	h := DefaultTUIForTest(func(messages ...any) {
-		// Test logger - do nothing
-	})
-
 	// Caso 1: Tab sin fields debe mostrar el scrollbar estándar
 	t.Run("Footer with no fields shows scrollbar", func(t *testing.T) {
-		// Guardar estado actual para restaurar después de la prueba
-		tab := h.TabSections[h.activeTab]
+		h := DefaultTUIForTest(func(messages ...any) {})
+		// Asegurar que hay al menos una pestaña
+		tab := h.NewTabSection("Test Tab", "Test Desc").(*tabSection)
+		h.activeTab = 0
 		originalFields := tab.FieldHandlers
 
 		// Configurar pestaña sin fields
@@ -41,9 +39,11 @@ func TestFooterView(t *testing.T) {
 
 	// Caso 2: Tab con fields debe mostrar el campo actual como input (ahora siempre, no solo en modo edición)
 	t.Run("Footer with fields shows field as input even when not editing", func(t *testing.T) {
+		h := DefaultTUIForTest(func(messages ...any) {})
 
 		// Crear un nuevo field con handler para la prueba
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test Tab", "Test Desc").(*tabSection)
+		h.activeTab = 0
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("TestLabel", "TestValue Rendered")
 		h.AddHandler(testHandler, "", tab)
@@ -72,8 +72,9 @@ func TestRenderFooterInput(t *testing.T) {
 	// Caso 1: Campo editable en modo edición debe mostrar cursor
 	t.Run("editable field in edit mode shows cursor", func(t *testing.T) {
 		h := DefaultTUIForTest(func(messages ...any) {})
+		h.activeTab = 0
 		h.editModeActivated = true
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Desc").(*tabSection)
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "test value")
 		h.AddHandler(testHandler, "", tab)
@@ -111,7 +112,8 @@ func TestRenderFooterInput(t *testing.T) {
 		})
 
 		// Limpiar todos los handlers existentes y crear explícitamente un handler no editable
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Desc").(*tabSection)
+		h.activeTab = 0
 		tab.setFieldHandlers([]*field{}) // Limpiar cualquier handler por defecto
 
 		// Crear explícitamente un handler no editable (ExecutionHandler)
@@ -138,7 +140,8 @@ func TestRenderFooterInput(t *testing.T) {
 
 		expectedLabel := "Test Handler"
 		// Configurar un índice activo fuera de rango
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Desc").(*tabSection)
+		h.activeTab = 0
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestNonEditableHandler(expectedLabel, "Some Value")
 		h.AddHandler(testHandler, "", tab)
@@ -164,7 +167,8 @@ func TestRenderFooterInput(t *testing.T) {
 			// Test logger - do nothing
 		})
 
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Desc").(*tabSection)
+		h.activeTab = 0
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
 		h.AddHandler(testHandler, "", tab)
@@ -199,7 +203,8 @@ func TestInputNavigation(t *testing.T) {
 	})
 
 	// Configurar múltiples campos para prueba de navegación
-	tab := h.TabSections[h.activeTab]
+	tab := h.NewTabSection("Test", "Desc").(*tabSection)
+	h.activeTab = 0
 	tab.setFieldHandlers([]*field{})
 	testHandler1 := NewTestEditableHandler("Field1", "Value1")
 	testHandler2 := NewTestEditableHandler("Field2", "Value2")
@@ -265,13 +270,14 @@ func TestInputNavigation(t *testing.T) {
 		})
 
 		// Configurar un campo editable
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Value").(*tabSection)
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
 		h.AddHandler(testHandler, "", tab)
 
 		// Asegurar que no estamos en modo edición
 		h.editModeActivated = false
+		h.activeTab = 0
 		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Simular pulsación de Enter
@@ -290,13 +296,14 @@ func TestInputNavigation(t *testing.T) {
 		})
 
 		// Configurar un campo editable
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Value").(*tabSection)
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value")
 		h.AddHandler(testHandler, "", tab)
 
 		// Asegurar que estamos en modo edición
 		h.editModeActivated = true
+		h.activeTab = 0
 		h.TabSections[h.activeTab].IndexActiveEditField = 0
 
 		// Simular pulsación de Esc
@@ -313,12 +320,13 @@ func TestInputNavigation(t *testing.T) {
 		h := DefaultTUIForTest(func(messages ...any) {
 			// Test logger - do nothing
 		})
-		tab := h.TabSections[h.activeTab]
+		tab := h.NewTabSection("Test", "Value1").(*tabSection)
 		tab.setFieldHandlers([]*field{})
 		testHandler := NewTestEditableHandler("Test", "Value1")
 		h.AddHandler(testHandler, "", tab)
 
 		// Configurar para edición
+		h.activeTab = 0
 		h.editModeActivated = true
 		h.TabSections[h.activeTab].IndexActiveEditField = 0
 		field := tab.FieldHandlers[0]
@@ -351,7 +359,8 @@ func TestCursorNoExtraSpace(t *testing.T) {
 	h.viewport.Width = 80
 	h.editModeActivated = true
 
-	tab := h.TabSections[h.activeTab]
+	tab := h.NewTabSection("Test", "Desc").(*tabSection)
+	h.activeTab = 0
 	tab.setFieldHandlers([]*field{})
 
 	// Texto original tiene largo 5
@@ -388,7 +397,8 @@ func TestCursorNoTrail(t *testing.T) {
 	h.editModeActivated = true
 	h.cursorVisible = true
 
-	tab := h.TabSections[h.activeTab]
+	tab := h.NewTabSection("Test", "Desc").(*tabSection)
+	h.activeTab = 0
 	tab.setFieldHandlers([]*field{})
 	testHandler := NewTestEditableHandler("Path", "abcdef")
 	h.AddHandler(testHandler, "", tab)

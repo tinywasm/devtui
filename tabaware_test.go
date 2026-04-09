@@ -44,7 +44,8 @@ func TestTabAwareFeature(t *testing.T) {
 	tui := NewTUI(config)
 	tui.SetTestMode(true)
 
-	// Add 3 tabs (SHORTCUTS is tab 0 by default, so we'll have 4 total)
+	// Add 3 tabs
+	tui.NewTabSection("MOCK", "Desc0")
 	tab1 := tui.NewTabSection("Tab1", "Desc1")
 	_ = tui.NewTabSection("Tab2", "Desc2")
 

@@ -22,8 +22,11 @@ func TestNewTUI(t *testing.T) {
 	}
 
 	// Since internal fields are not accessible in real usage, we can only test
-	// that the TUI was created successfully
-	// The default tab should be titled "DEFAULT" according to new.go
+	// that the TUI was created successfully.
+	// NewTUI should not add any default tabs anymore.
+	if len(tui.TabSections) != 0 {
+		t.Errorf("Expected 0 tab sections after NewTUI, got %d", len(tui.TabSections))
+	}
 }
 
 func TestMultipleTabSections(t *testing.T) {
@@ -43,8 +46,8 @@ func TestMultipleTabSections(t *testing.T) {
 
 	totalSections := len(tui.TabSections)
 
-	// Expected: 1 (SHORTCUTS) + 2 (Tab1, Tab2) = 3
-	expected := 3
+	// Expected: 2 (Tab1, Tab2)
+	expected := 2
 	if totalSections != expected {
 		t.Errorf("Expected %d tab sections, got %d", expected, totalSections)
 

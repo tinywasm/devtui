@@ -48,6 +48,7 @@ func TestClientModeSSE(t *testing.T) {
 		ExitChan:   make(chan bool),
 	}
 	tui := NewTUI(config)
+	tui.NewTabSection("SHORTCUTS", "Mock Shortcuts")
 	tui.SetTestMode(true) // Ensure deterministic behavior if applicable
 	// Start SSE client manually (Init() does this normally, but tests don't call Init())
 	go tui.startSSEClient(config.ClientURL)
@@ -107,6 +108,7 @@ func TestClientModeKeyboard(t *testing.T) {
 		ExitChan:   make(chan bool),
 	}
 	tui := NewTUI(config)
+	tui.NewTabSection("TestTab", "Mock Tab")
 
 	// Test Ctrl+C: should send "stop" action and close ExitChan
 	_, cmd := tui.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
@@ -301,6 +303,7 @@ func TestHandleLogEvent_NormalEntry_NoStateRefresh(t *testing.T) {
 		},
 		tabContentsChan: make(chan tabContent, 10),
 	}
+	tui.NewTabSection("SHORTCUTS", "Mock Shortcuts")
 
 	// HandlerType != 0 should NOT trigger refresh
 	tui.handleLogEvent(`{"handler_type": 1, "tab_title": "SHORTCUTS"}`)

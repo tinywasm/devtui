@@ -35,7 +35,7 @@ func TestUIDisplayBug(t *testing.T) {
 		tui.viewport.Height = 24
 
 		// Navigate to Server tab
-		tui.activeTab = 1 // Skip SHORTCUTS tab
+		tui.activeTab = 0
 		tabSection := tab.(*tabSection)
 		portField := tabSection.FieldHandlers[0]
 
@@ -115,7 +115,7 @@ func TestUIDisplayBug(t *testing.T) {
 
 		tui.viewport.Width = 80
 		tui.viewport.Height = 24
-		tui.activeTab = 1
+		tui.activeTab = 0
 
 		tabSection := tab.(*tabSection)
 		portField := tabSection.FieldHandlers[0]
