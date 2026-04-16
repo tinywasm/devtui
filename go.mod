@@ -14,7 +14,6 @@ require (
 require (
 	github.com/tinywasm/dom v0.7.0 // indirect
 	github.com/tinywasm/fetch v0.1.23 // indirect
-	github.com/tinywasm/orm v0.7.4 // indirect
 )
 
 require (
@@ -28,7 +27,7 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/tinywasm/mcp v0.1.2
+	github.com/tinywasm/mcp v0.1.3
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/text v0.32.0 // indirect
 )
