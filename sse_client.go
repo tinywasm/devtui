@@ -151,7 +151,6 @@ func (h *DevTUI) handleLogEvent(data string) {
 	// HandlerType 0 = TypeStateRefresh signal from daemon
 	if dto.HandlerType == 0 {
 		h.fetchAndReconstructState()
-		h.RefreshUI()
 		return
 	}
 
@@ -217,6 +216,7 @@ func (h *DevTUI) fetchAndReconstructState() {
 		}
 		h.clearRemoteHandlers()
 		h.reconstructRemoteHandlers(entries)
+		h.RefreshUI()
 	})
 }
 
