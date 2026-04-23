@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/tinywasm/dom v0.7.2 // indirect
+	github.com/tinywasm/dom v0.7.3 // indirect
 	github.com/tinywasm/fetch v0.1.23 // indirect
 )
 
