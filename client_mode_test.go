@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -49,10 +50,10 @@ func TestSSEClient_Authentication(t *testing.T) {
 }
 
 func TestSSEClient_Reconnection(t *testing.T) {
-	connectionCount := 0
+	var connectionCount atomic.Int32
 	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		connectionCount++
-		if connectionCount == 1 {
+		count := connectionCount.Add(1)
+		if count == 1 {
 			// First connection: close immediately
 			return
 		}
@@ -75,10 +76,10 @@ func TestSSEClient_Reconnection(t *testing.T) {
 
 	// Wait for at least two connection attempts
 	timeout := time.After(3 * time.Second)
-	for connectionCount < 2 {
+	for connectionCount.Load() < 2 {
 		select {
 		case <-timeout:
-			t.Fatalf("Timed out waiting for SSE reconnection, count: %d", connectionCount)
+			t.Fatalf("Timed out waiting for SSE reconnection, count: %d", connectionCount.Load())
 		default:
 			time.Sleep(100 * time.Millisecond)
 		}
