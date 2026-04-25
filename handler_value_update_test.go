@@ -92,8 +92,6 @@ func TestHandlerValueUpdateAfterEdit(t *testing.T) {
 			t.Errorf("Expected initial value '%s', got '%s'", expectedInitial, initialValue)
 		}
 
-		t.Logf("Initial field value: '%s'", field.Value())
-
 		// Realistic: User presses Enter to enter edit mode
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
@@ -110,14 +108,8 @@ func TestHandlerValueUpdateAfterEdit(t *testing.T) {
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'8'}})
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'0'}})
 
-		t.Logf("Before pressing Enter - tempEditValue: '%s', handler Value(): '%s'",
-			field.tempEditValue, field.Value())
-
 		// User presses Enter to save the change
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
-
-		t.Logf("After pressing Enter - tempEditValue: '%s', handler Value(): '%s'",
-			field.tempEditValue, field.Value())
 
 		// The critical test: field.Value() should now return the updated value from handler
 		expectedNewValue := "80"
@@ -181,14 +173,9 @@ func TestHandlerValueUpdateAfterEdit(t *testing.T) {
 		}
 
 		originalValue := field.Value()
-		t.Logf("Before pressing Enter with invalid value - tempEditValue: '%s', handler Value(): '%s'",
-			field.tempEditValue, originalValue)
 
 		// User presses Enter to save the invalid change
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
-
-		t.Logf("After pressing Enter with invalid value - tempEditValue: '%s', handler Value(): '%s'",
-			field.tempEditValue, field.Value())
 
 		// The field value should remain unchanged when validation fails
 		actualValue := field.Value()

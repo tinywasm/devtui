@@ -56,19 +56,6 @@ func TestLayoutAlignment(t *testing.T) {
 
 	totalFooterLeftWidth := paginationWidth + spacerWidth + labelWidth
 
-	t.Logf("\n--- LAYOUT ALIGNMENT VERIFICATION ---\n")
-	t.Logf("Constants:")
-	t.Logf("  UIColumnWidth:        %d", UIColumnWidth)
-	t.Logf("  PaginationColumnWidth:%d", PaginationColumnWidth)
-	t.Logf("  FooterSpacerWidth:    %d", FooterSpacerWidth)
-	t.Logf("  FooterExtraPadding:   %d", FooterExtraPadding)
-	t.Logf("  FooterLabelWidth:     %d (Calc: %d - %d - %d - %d)",
-		FooterLabelWidth, UIColumnWidth, PaginationColumnWidth, FooterSpacerWidth, FooterExtraPadding)
-	t.Logf("\nMeasurements:")
-	t.Logf("  HEADER Width: %d", headerWidth)
-	t.Logf("  FOOTER Width: %d (Pag:%d + Spc:%d + Lbl:%d)", totalFooterLeftWidth, paginationWidth, spacerWidth, labelWidth)
-	t.Logf("  DIFF:         %d", headerWidth-totalFooterLeftWidth)
-
 	if headerWidth != totalFooterLeftWidth {
 		t.Errorf("MISALIGNMENT: Header width (%d) != Footer width (%d)", headerWidth, totalFooterLeftWidth)
 	}

@@ -55,8 +55,6 @@ func TestSpaceKeyInEditMode(t *testing.T) {
 			Runes: []rune{'h'},
 		})
 
-		t.Logf("After typing 'h' - tempEditValue: '%s', cursor: %d", field.tempEditValue, field.cursor)
-
 		h.handleKeyboard(tea.KeyMsg{
 			Type:  tea.KeyRunes,
 			Runes: []rune{'e'},
@@ -86,8 +84,6 @@ func TestSpaceKeyInEditMode(t *testing.T) {
 		h.handleKeyboard(tea.KeyMsg{
 			Type: tea.KeySpace,
 		})
-
-		t.Logf("After pressing space - tempEditValue: '%s', cursor: %d", field.tempEditValue, field.cursor)
 
 		// Should have "hello " (hello with space)
 		expectedAfterSpace := "hello "
@@ -143,8 +139,6 @@ func TestSpaceKeyInEditMode(t *testing.T) {
 			Runes: []rune{' '},
 		})
 
-		t.Logf("After adding space via Runes - tempEditValue: '%s', cursor: %d", field.tempEditValue, field.cursor)
-
 		// Add "world" using Runes
 		h.handleKeyboard(tea.KeyMsg{
 			Type:  tea.KeyRunes,
@@ -191,7 +185,5 @@ func TestSpaceKeyInEditMode(t *testing.T) {
 		if field.cursor != len([]rune(expectedText)) {
 			t.Errorf("Expected cursor at position %d, got %d", len([]rune(expectedText)), field.cursor)
 		}
-
-		t.Logf("Successfully typed: '%s'", field.tempEditValue)
 	})
 }

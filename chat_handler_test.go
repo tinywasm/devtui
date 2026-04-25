@@ -14,8 +14,6 @@ import (
 // focusing on handler behavior in different states, not DevTUI orchestration
 func TestChatHandlerRealScenario(t *testing.T) {
 	t.Run("Chat handler behavior following DevTUI responsibility separation", func(t *testing.T) {
-		t.Logf("=== TESTING CHAT HANDLER ACCORDING TO DEVTUI PRINCIPLES ===")
-
 		// Create chat handler with initial state (using the real handler from example)
 		chatHandler := &example.SimpleChatHandler{}
 
@@ -24,13 +22,10 @@ func TestChatHandlerRealScenario(t *testing.T) {
 			if len(message) > 0 {
 				msg := fmt.Sprint(message[0])
 				contentDisplayed = append(contentDisplayed, msg)
-				t.Logf("Progress: %s", msg)
 			}
 		})
 
 		// STATE 1: Initial content display (when DevTUI selects the field)
-		t.Logf("State 1: DevTUI selects field -> handler shows content")
-
 		// Verify initial state
 		if chatHandler.WaitingForUser() {
 			t.Errorf("Initial state: should not be waiting for user")
@@ -56,8 +51,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		}
 
 		// STATE 2: DevTUI transitions to input mode (this is DevTUI's responsibility)
-		t.Logf("State 2: DevTUI activates input mode -> handler becomes ready")
-
 		contentDisplayed = []string{}
 
 		// DevTUI is responsible for managing the input activation
@@ -75,8 +68,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		}
 
 		// STATE 3: User sends message -> handler processes it
-		t.Logf("State 3: User sends message -> handler processes it")
-
 		userMessage := "Hello, how are you?"
 		contentDisplayed = []string{}
 		chatHandler.Change(userMessage)
@@ -103,8 +94,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		}
 
 		// STATE 4: AI response completion (handler's async business logic)
-		t.Logf("State 4: Handler completes AI response -> ready for next input")
-
 		// Wait for async AI response (handler's responsibility)
 		maxWait := 50
 		for i := 0; i < maxWait; i++ {
@@ -132,8 +121,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		// and DevTUI respects that encapsulation.
 
 		// STATE 5: DevTUI re-selects field -> handler shows history
-		t.Logf("State 5: DevTUI re-selects field -> handler shows history")
-
 		// Simulate DevTUI deactivating input mode (field loses focus, regains focus)
 		chatHandler.WaitingForUserFlag = false
 		contentDisplayed = []string{}
@@ -154,8 +141,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		}
 
 		// STATE 6: Test empty input while in input mode (edge case handling)
-		t.Logf("State 6: User presses Enter without typing -> handler guides user")
-
 		chatHandler.WaitingForUserFlag = true // Back to input mode
 		contentDisplayed = []string{}
 
@@ -173,8 +158,6 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		if !guidanceFound {
 			t.Errorf("Expected user guidance message, got: %v", contentDisplayed)
 		}
-
-		t.Logf("=== CHAT HANDLER TEST COMPLETED - ALL RESPONSIBILITIES PROPERLY SEPARATED ===")
 	})
 
 	t.Run("Test chat UI rendering and edit mode transitions", func(t *testing.T) {
@@ -193,42 +176,32 @@ func TestChatHandlerRealScenario(t *testing.T) {
 		chatTabSection := chatTab.(*tabSection)
 		chatField := chatTabSection.FieldHandlers[0]
 
-		t.Logf("=== TESTING UI RENDERING AND EDIT MODE ===")
-
 		// Phase 1: Before any interaction
-		content1 := tui.ContentView()
-		t.Logf("Phase 1 - Initial UI:\n%s", content1)
+		_ = tui.ContentView()
 
 		// Phase 2: Enter to activate input mode
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
-		content2 := tui.ContentView()
-		t.Logf("Phase 2 - After Enter (should be in edit mode):\n%s", content2)
+		_ = tui.ContentView()
 
 		// Should now be in edit mode (check if tempEditValue is being used)
 		if chatField.tempEditValue == "" && !chatHandler.WaitingForUser() {
 			// This is expected - the handler manages its own state
-			t.Logf("Handler state: WaitingForUser=%v, IsProcessing=%v", chatHandler.WaitingForUser(), chatHandler.IsProcessing)
 		}
 
 		// Phase 3: Type message
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("hello")})
 
-		content3 := tui.ContentView()
-		t.Logf("Phase 3 - After typing 'hello':\n%s", content3)
+		_ = tui.ContentView()
 
 		// Phase 4: Send message
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
-		content4 := tui.ContentView()
-		t.Logf("Phase 4 - After sending message:\n%s", content4)
+		_ = tui.ContentView()
 
 		// Should no longer be in edit mode (processing message)
 		if chatHandler.WaitingForUser() && !chatHandler.IsProcessing {
 			// This is fine - handler completed processing and is ready for next input
-			t.Logf("Handler ready for next input: WaitingForUser=%v, IsProcessing=%v", chatHandler.WaitingForUser(), chatHandler.IsProcessing)
 		}
-
-		t.Logf("=== UI RENDERING TEST COMPLETED ===")
 	})
 }

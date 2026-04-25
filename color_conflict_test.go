@@ -36,8 +36,6 @@ func TestOpcionA_RequirementsValidation(t *testing.T) {
 			tabContent := tui.createTabContent(tc.content, tc.msgType, tab.(*tabSection), tc.handler, "", "", handlerTypeLoggable)
 			formattedMessage := tui.formatMessage(tabContent, true)
 
-			t.Logf("Message: %s", formattedMessage)
-
 			// 1. Verificar que el formato contiene el nombre del handler (sin corchetes)
 			// NOTE: current API truncates/pads handler names to a fixed width (HandlerNameWidth).
 			// Check for the prefix/truncated form instead of the full handler name.
@@ -61,17 +59,12 @@ func TestOpcionA_RequirementsValidation(t *testing.T) {
 			if strings.Contains(formattedMessage, separatedPattern) {
 				t.Errorf("FAIL: Found old separated pattern '%s'", separatedPattern)
 			}
-
-			t.Log("✅ PASS: Opción A requirements met")
 		})
 	}
 }
 
 // TestCentralizedMessageProcessing validates that all message flows use centralized processing
 func TestCentralizedMessageProcessing(t *testing.T) {
-	t.Log("TESTING CENTRALIZED MESSAGE PROCESSING:")
-	t.Log("=======================================")
-
 	// Test cases que deberían detectar tipo automáticamente
 	testCases := []struct {
 		content      string
@@ -94,15 +87,9 @@ func TestCentralizedMessageProcessing(t *testing.T) {
 
 			if detectedType != tc.expectedType {
 				t.Errorf("FAIL: Expected %v, got %v for: %s", tc.expectedType, detectedType, tc.content)
-			} else {
-				t.Logf("✅ PASS: '%s' correctly detected as %v", tc.content, detectedType)
 			}
 		})
 	}
-
-	t.Log("")
-	t.Log("CONCLUSION: DetectMessageType works correctly")
-	t.Log("SOLUTION: All message methods now use DetectMessageType for centralization")
 }
 
 // TestLastMessageColorFixed validates that the last callback message now uses correct colors
@@ -115,8 +102,6 @@ func TestLastMessageColorFixed(t *testing.T) {
 	tui.SetTestMode(true)
 
 	tab := tui.NewTabSection("Test", "Test Tab")
-
-	t.Log("🔧 SOLUTION TEST: Validar que el último mensaje usa el color correcto")
 
 	// Test casos que simulan el final de una operación
 	finalMessages := []struct {
@@ -138,32 +123,18 @@ func TestLastMessageColorFixed(t *testing.T) {
 		t.Run(tc.content, func(t *testing.T) {
 			// Simular el mensaje final de una operación
 			tabContent := tui.createTabContent(tc.content, tc.expectedType, tab.(*tabSection), "TestHandler", "final-op-123", "", handlerTypeLoggable)
-			formattedMessage := tui.formatMessage(tabContent, true)
-
-			t.Logf("Context: %s", tc.context)
-			t.Logf("Content: %s", tc.content)
-			t.Logf("Expected: %s (%s)", tc.expectedType, tc.expectedColor)
-			t.Logf("Formatted: %s", formattedMessage)
+			_ = tui.formatMessage(tabContent, true)
 
 			// Verificar detección automática de tipo
 			_, detectedType := Translate(tc.content).StringType()
 			if detectedType != tc.expectedType {
 				t.Errorf("❌ DetectMessageType failed: Expected %v, got %v", tc.expectedType, detectedType)
-			} else {
-				t.Logf("✅ DetectMessageType working: %s → %v", tc.content, detectedType)
 			}
 
 			// Verificar que el tabContent tiene el tipo correcto
 			if tabContent.Type != tc.expectedType {
 				t.Errorf("❌ TabContent type wrong: Expected %v, got %v", tc.expectedType, tabContent.Type)
-			} else {
-				t.Logf("✅ TabContent type correct: %v", tabContent.Type)
 			}
 		})
 	}
-
-	t.Log("")
-	t.Log("🎯 RESULT: sendSuccessMessage() y sendErrorMessage() ahora usan DetectMessageType")
-	t.Log("✅ BENEFIT: El último mensaje de callback tendrá el color correcto según su contenido")
-	t.Log("✅ CONSISTENCY: Todos los métodos de envío de mensajes usan centralización")
 }

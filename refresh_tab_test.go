@@ -14,7 +14,6 @@ import (
 func TestRefreshCurrentTab(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestRefresh",
-		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
 	tui := NewTUI(config)
@@ -54,16 +53,12 @@ func TestRefreshCurrentTab(t *testing.T) {
 func TestRefreshCurrentTabBeforeReady(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestRefreshBeforeReady",
-		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
 	tui := NewTUI(config)
 
 	// Call RefreshUI before Start() - should not panic
 	tui.RefreshUI()
-
-	// If we got here without panic, test passes
-	t.Log("RefreshUI handled gracefully before TUI was ready")
 }
 
 // TestRefreshCurrentTabFromMultipleGoroutines verifica que RefreshUI
@@ -71,7 +66,6 @@ func TestRefreshCurrentTabBeforeReady(t *testing.T) {
 func TestRefreshCurrentTabFromMultipleGoroutines(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestConcurrentRefresh",
-		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
 	tui := NewTUI(config)

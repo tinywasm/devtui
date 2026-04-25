@@ -39,20 +39,10 @@ func TestFieldEditingBugReplication(t *testing.T) {
 		field.tempEditValue = field.Value()
 		field.cursor = len([]rune(field.Value())) // Cursor at the end
 
-		t.Logf("Initial state - Value: '%s', tempEditValue: '%s', cursor: %d",
-			field.Value(), field.tempEditValue, field.cursor)
-
-		// Check the available text width to understand why text isn't being inserted
-		_, availableTextWidth := h.calculateInputWidths(field.handler.Label())
-		t.Logf("Available text width: %d", availableTextWidth)
-
 		// Step 1: User selects all content and deletes it (simulating Ctrl+A + Delete)
 		// This should clear tempEditValue completely
 		field.tempEditValue = ""
 		field.cursor = 0
-
-		t.Logf("After clearing field - Value: '%s', tempEditValue: '%s', cursor: %d",
-			field.Value(), field.tempEditValue, field.cursor)
 
 		// Step 2: User types a new character 'g'
 		// This should now work correctly and only show 'g'
@@ -60,9 +50,6 @@ func TestFieldEditingBugReplication(t *testing.T) {
 			Type:  tea.KeyRunes,
 			Runes: []rune{'g'},
 		})
-
-		t.Logf("After typing 'g' - Value: '%s', tempEditValue: '%s', cursor: %d",
-			field.Value(), field.tempEditValue, field.cursor)
 
 		// Now it should work correctly
 		expectedCorrectValue := "g"
@@ -98,9 +85,6 @@ func TestFieldEditingCorrectBehavior(t *testing.T) {
 		testTabIndex := GetFirstTestTabIndex()
 		tabSection := h.TabSections[testTabIndex]
 		field := tabSection.FieldHandlers[0]
-
-		// The field already has "initial test value" from DefaultTUIForTest
-		// No need to set it again as SetValue is deprecated
 
 		// Switch to the test tab and enter editing mode
 		h.activeTab = testTabIndex

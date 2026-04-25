@@ -34,20 +34,14 @@ func TestEmptyFieldEnterBehavior(t *testing.T) {
 		// Realistic: User enters edit mode by pressing Enter
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
-		t.Logf("Initial state - Value: '%s', tempEditValue: '%s'", field.Value(), field.tempEditValue)
-
 		// Realistic: User clears the entire field with backspace
 		// Clear existing text (should be "initial test value" = 18 chars)
 		for i := 0; i < 25; i++ { // More backspaces to ensure complete clearing
 			h.handleKeyboard(tea.KeyMsg{Type: tea.KeyBackspace})
 		}
 
-		t.Logf("After clearing - Value: '%s', tempEditValue: '%s'", field.Value(), field.tempEditValue)
-
 		// User presses Enter to save the empty field
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
-
-		t.Logf("After pressing Enter - Value: '%s', tempEditValue: '%s'", field.Value(), field.tempEditValue)
 
 		// The field should now have the value that the changeFunc returned for empty string
 		// According to the TestField1Handler changeFunc, it should have empty string as value

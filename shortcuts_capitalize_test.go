@@ -76,9 +76,6 @@ Tabs:
 			if !Contains(result, "•") {
 				t.Errorf("Bullet points should be preserved in result: %q", result)
 			}
-
-			// Log the actual result for debugging
-			t.Logf("Language: %s\nResult: %q", tt.lang, result)
 		})
 	}
 }
