@@ -269,7 +269,7 @@ func TestHandleKeyboard(t *testing.T) {
 		}
 	})
 
-	// Test case: Normal mode, Ctrl+C should return quit command
+	// Test case: Normal mode, Ctrl+C should set isShuttingDown and return nil command (actual Quit handled by shutdownMsg)
 	t.Run("Normal mode - Ctrl+C", func(t *testing.T) {
 		// Reset para esta prueba con test handler
 		testHandler := NewTestEditableHandler("Test Field", "initial value")
@@ -283,17 +283,16 @@ func TestHandleKeyboard(t *testing.T) {
 
 		h.editModeActivated = false
 
-		// Asegurarnos de que ExitChan está correctamente inicializado para esta prueba
-		h.ExitChan = make(chan bool)
-
 		continueParsing, cmd := h.handleKeyboard(tea.KeyMsg{Type: tea.KeyCtrlC})
 
 		if continueParsing {
 			t.Errorf("Expected continueParsing to be false after Ctrl+C")
 		}
 
-		if cmd == nil {
-			t.Errorf("Expected non-nil command (tea.Quit) after Ctrl+C")
+		// With the new implementation, handleKeyboard returns nil for cmd on Ctrl+C,
+		// and sends shutdownMsg{} to h.tea.Send.
+		if cmd != nil {
+			t.Errorf("Expected nil command (handled via shutdownMsg) after Ctrl+C, got %v", cmd)
 		}
 	})
 }

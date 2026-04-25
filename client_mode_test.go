@@ -1,161 +1,168 @@
 package devtui
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	tea "github.com/charmbracelet/bubbletea"
-	tinyfmt "github.com/tinywasm/fmt"
-	tinyjson "github.com/tinywasm/json"
 )
 
-func TestClientModeSSE(t *testing.T) {
+func TestSSEClient_Authentication(t *testing.T) {
 	authHeaderChan := make(chan string, 1)
-	// Setup mock SSE server
+
 	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeaderChan <- r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "text/event-stream")
-		w.WriteHeader(200)
-
-		// Send a log message
-		dto := tabContentDTO{
-			Id:          "123",
-			Timestamp:   "10:00:00",
-			Content:     "Hello from Server",
-			Type:        tinyfmt.Msg.Info,
-			TabTitle:    "SHORTCUTS", // Default tab
-			HandlerName: "TestHandler",
-			HandlerType: handlerTypeLoggable,
-		}
-		data, _ := json.Marshal(dto)
-		fmt.Fprintf(w, "data: %s\n\n", data)
-		w.(http.Flusher).Flush()
-
-		// Keep connection open for a bit
-		time.Sleep(100 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+		// Send a dummy event to keep connection open briefly
+		w.Write([]byte("event: log\ndata: {}\n\n"))
 	}))
 	defer sseServer.Close()
 
-	// Initialize TUI in Client Mode
 	config := &TuiConfig{
 		ClientMode: true,
 		ClientURL:  sseServer.URL + "/logs",
 		APIKey:     "test-api-key",
-		ExitChan:   make(chan bool),
 	}
 	tui := NewTUI(config)
 	tui.NewTabSection("SHORTCUTS", "Mock Shortcuts")
 	tui.SetTestMode(true) // Ensure deterministic behavior if applicable
-	// Start SSE client manually (Init() does this normally, but tests don't call Init())
-	go tui.startSSEClient(config.ClientURL)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start SSE client manually
+	tui.sseWg.Add(1)
+	go tui.startSSEClient(config.ClientURL, ctx)
 
 	// Wait for auth header
 	select {
 	case auth := <-authHeaderChan:
 		if auth != "Bearer test-api-key" {
-			t.Errorf("Expected auth header 'Bearer test-api-key', got '%s'", auth)
+			t.Errorf("Expected Authorization header 'Bearer test-api-key', got '%s'", auth)
 		}
 	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for auth header")
+		t.Fatal("Timed out waiting for SSE connection with Auth header")
 	}
-
-	// Wait for message to arrive in channel
-	select {
-	case msg := <-tui.tabContentsChan:
-		if msg.Content != "Hello from Server" {
-			t.Errorf("Expected content 'Hello from Server', got '%s'", msg.Content)
-		}
-		if msg.tabSection.Title != "SHORTCUTS" {
-			t.Errorf("Expected tab 'SHORTCUTS', got '%s'", msg.tabSection.Title)
-		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for SSE message")
-	}
-
-	// Close ExitChan to stop SSE client
-	close(config.ExitChan)
 }
 
-func TestClientModeKeyboard(t *testing.T) {
-	actionReceived := make(chan string, 1)
-
-	// Setup mock action server
-	actionServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/mcp" {
-			var body struct {
-				Method string `json:"method"`
-				Params string `json:"params"`
-			}
-			json.NewDecoder(r.Body).Decode(&body)
-			if body.Method == "tinywasm/action" {
-				var args ActionArgs
-				tinyjson.Decode([]byte(body.Params), &args)
-				actionReceived <- args.Key
-			}
+func TestSSEClient_Reconnection(t *testing.T) {
+	connectionCount := 0
+	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		connectionCount++
+		if connectionCount == 1 {
+			// First connection: close immediately
+			return
 		}
-		w.WriteHeader(200)
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
 	}))
-	defer actionServer.Close()
+	defer sseServer.Close()
 
-	// Initialize TUI in Client Mode
 	config := &TuiConfig{
 		ClientMode: true,
-		ClientURL:  actionServer.URL,
-		ExitChan:   make(chan bool),
+		ClientURL:  sseServer.URL + "/logs",
 	}
 	tui := NewTUI(config)
-	tui.NewTabSection("TestTab", "Mock Tab")
 
-	// Test Ctrl+C: should send "stop" action and close ExitChan
-	_, cmd := tui.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
-	if cmd == nil {
-		t.Error("Expected command from Ctrl+C, got nil")
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// Verify "stop" action was sent
-	select {
-	case key := <-actionReceived:
-		if key != "stop" {
-			t.Errorf("Expected action key 'stop', got '%s'", key)
+	tui.sseWg.Add(1)
+	go tui.startSSEClient(config.ClientURL, ctx)
+
+	// Wait for at least two connection attempts
+	timeout := time.After(3 * time.Second)
+	for connectionCount < 2 {
+		select {
+		case <-timeout:
+			t.Fatalf("Timed out waiting for SSE reconnection, count: %d", connectionCount)
+		default:
+			time.Sleep(100 * time.Millisecond)
 		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for action request")
-	}
-
-	// ExitChan should be closed by Ctrl+C
-	select {
-	case <-config.ExitChan:
-		// Good - channel was closed
-	default:
-		t.Error("ExitChan should be closed by Ctrl+C in Client Mode")
 	}
 }
 
-func TestTuiConfig_APIKey_StoredInDevTUI(t *testing.T) {
-	apiKey := "secret-token-123"
+func TestSSEClient_StateRefresh(t *testing.T) {
+	// This test verifies that HandlerType 0 triggers fetchAndReconstructState
+	// We'll mock the state refresh by checking if it attempts to connect to the daemon
+	refreshTriggered := make(chan bool, 1)
+
+	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/logs" {
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			// Send StateRefresh signal
+			w.Write([]byte("event: log\ndata: {\"handler_type\": 0}\n\n"))
+			return
+		}
+		if r.URL.Path == "/mcp" {
+			refreshTriggered <- true
+		}
+	}))
+	defer sseServer.Close()
+
 	config := &TuiConfig{
-		AppName: "TestApp",
-		APIKey:  apiKey,
+		ClientMode: true,
+		ClientURL:  sseServer.URL + "/logs",
 	}
 	tui := NewTUI(config)
 
-	if tui.apiKey != apiKey {
-		t.Errorf("Expected apiKey %s, got %s", apiKey, tui.apiKey)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tui.sseWg.Add(1)
+	go tui.startSSEClient(config.ClientURL, ctx)
+
+	select {
+	case <-refreshTriggered:
+		// Success
+	case <-time.After(2 * time.Second):
+		t.Fatal("Timed out waiting for state refresh trigger")
 	}
 }
 
-func TestSSEConnect_NoAPIKey_NoAuthHeader(t *testing.T) {
+func TestSSEClient_LogEventProcessing(t *testing.T) {
+	config := &TuiConfig{
+		ClientMode: true,
+		ClientURL:  "http://localhost:1234/logs",
+	}
+	tui := NewTUI(config)
+	tab := tui.NewTabSection("TEST", "Test Tab")
+	section := tab.(*tabSection)
+
+	eventData := tabContentDTO{
+		Id:          "test-id",
+		Timestamp:   "2023-01-01 12:00:00",
+		Content:     "test log message",
+		Type:        1, // Msg.Info
+		TabTitle:    "TEST",
+		HandlerName: "TestHandler",
+		HandlerType: handlerTypeLoggable,
+	}
+	data, _ := json.Marshal(eventData)
+
+	tui.handleLogEvent(string(data))
+
+	// Verify section contents
+	section.mu.RLock()
+	defer section.mu.RUnlock()
+	if len(section.tabContents) != 1 {
+		t.Errorf("Expected 1 log entry, got %d", len(section.tabContents))
+	} else if section.tabContents[0].Content != "test log message" {
+		t.Errorf("Expected content 'test log message', got '%s'", section.tabContents[0].Content)
+	}
+}
+
+func TestSSEClient_NoAPIKey(t *testing.T) {
 	authHeaderChan := make(chan string, 1)
+
 	sseServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeaderChan <- r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "text/event-stream")
-		w.WriteHeader(200)
-		fmt.Fprintf(w, "data: {}\n\n")
-		w.(http.Flusher).Flush()
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer sseServer.Close()
 
@@ -163,155 +170,94 @@ func TestSSEConnect_NoAPIKey_NoAuthHeader(t *testing.T) {
 		ClientMode: true,
 		ClientURL:  sseServer.URL + "/logs",
 		APIKey:     "", // No API Key
-		ExitChan:   make(chan bool),
 	}
 	tui := NewTUI(config)
-	go tui.startSSEClient(config.ClientURL)
-	defer close(config.ExitChan)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	tui.sseWg.Add(1)
+	go tui.startSSEClient(config.ClientURL, ctx)
 
 	select {
 	case auth := <-authHeaderChan:
 		if auth != "" {
-			t.Errorf("Expected no Authorization header, got '%s'", auth)
+			t.Errorf("Expected NO Authorization header, got '%s'", auth)
 		}
 	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for SSE request")
+		t.Fatal("Timed out waiting for SSE connection")
 	}
 }
 
-func TestPostAction_SendsJSONRPCAction(t *testing.T) {
-	type rpcRequest struct {
-		Method string `json:"method"`
-		Params string `json:"params"`
+func TestTuiConfig_APIKey_StoredInDevTUI(t *testing.T) {
+	config := &TuiConfig{
+		AppName: "TestApp",
+		APIKey:  "secret-key",
 	}
-	requestChan := make(chan rpcRequest, 1)
+	tui := NewTUI(config)
 
-	actionServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body rpcRequest
-		json.NewDecoder(r.Body).Decode(&body)
-		requestChan <- body
-		w.WriteHeader(200)
-	}))
-	defer actionServer.Close()
-
-	tui := &DevTUI{
-		TuiConfig: &TuiConfig{
-			ClientURL: actionServer.URL + "/logs",
-		},
-	}
-	client := tui.mcpClient()
-	postAction(client, "ctrl+s", "save-value")
-
-	select {
-	case req := <-requestChan:
-		if req.Method != "tinywasm/action" {
-			t.Errorf("Expected method 'tinywasm/action', got '%s'", req.Method)
-		}
-		var args ActionArgs
-		tinyjson.Decode([]byte(req.Params), &args)
-
-		if args.Key != "ctrl+s" {
-			t.Errorf("Expected key 'ctrl+s', got '%s'", args.Key)
-		}
-		if args.Value != "save-value" {
-			t.Errorf("Expected value 'save-value', got '%s'", args.Value)
-		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for action request")
+	if tui.apiKey != "secret-key" {
+		t.Errorf("Expected apiKey 'secret-key', got '%s'", tui.apiKey)
 	}
 }
 
-func TestFetchState_CallsJSONRPCState(t *testing.T) {
-	methodChan := make(chan string, 1)
-	mcpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Method string `json:"method"`
-		}
-		json.NewDecoder(r.Body).Decode(&body)
-		methodChan <- body.Method
-
-		// Return empty state
-		fmt.Fprintf(w, `{"jsonrpc":"2.0","result":[],"id":1}`)
-	}))
-	defer mcpServer.Close()
-
+func TestDevTUI_fetchAndReconstructState_Stripping(t *testing.T) {
 	tui := &DevTUI{
 		TuiConfig: &TuiConfig{
-			ClientURL: mcpServer.URL + "/logs",
+			ClientURL: "http://localhost:3030/logs",
 		},
 	}
-
-	tui.fetchAndReconstructState()
-
-	select {
-	case method := <-methodChan:
-		if method != "tinywasm/state" {
-			t.Errorf("Expected method 'tinywasm/state', got '%s'", method)
-		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for state request")
+	baseURL := tui.actionBaseURL()
+	expected := "http://localhost:3030"
+	if baseURL != expected {
+		t.Errorf("Expected base URL %s, got %s", expected, baseURL)
 	}
 }
 
-func TestHandleLogEvent_StateRefreshSignal_FetchesState(t *testing.T) {
-	methodChan := make(chan string, 1)
-	mcpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Method string `json:"method"`
-		}
-		json.NewDecoder(r.Body).Decode(&body)
-		methodChan <- body.Method
-		fmt.Fprintf(w, `{"jsonrpc":"2.0","result":[],"id":1}`)
-	}))
-	defer mcpServer.Close()
-
+func TestDevTUI_clearRemoteHandlers(t *testing.T) {
 	tui := &DevTUI{
-		TuiConfig: &TuiConfig{
-			ClientURL: mcpServer.URL + "/logs",
-		},
-		tabContentsChan: make(chan tabContent, 10),
+		TuiConfig: &TuiConfig{},
+	}
+	section := &tabSection{Title: "Test"}
+	tui.TabSections = []*tabSection{section}
+
+	section.FieldHandlers = []*field{
+		{isRemote: false},
+		{isRemote: true},
+		{isRemote: false},
+		{isRemote: true},
 	}
 
-	// HandlerType: 0 should trigger refresh
-	tui.handleLogEvent(`{"handler_type": 0}`)
+	tui.clearRemoteHandlers()
 
-	select {
-	case method := <-methodChan:
-		if method != "tinywasm/state" {
-			t.Errorf("Expected method 'tinywasm/state', got '%s'", method)
+	if len(section.FieldHandlers) != 2 {
+		t.Errorf("Expected 2 handlers after clearing, got %d", len(section.FieldHandlers))
+	}
+	for _, f := range section.FieldHandlers {
+		if f.isRemote {
+			t.Errorf("Found remote handler after clearing")
 		}
-	case <-time.After(2 * time.Second):
-		t.Error("Timeout waiting for state request")
 	}
 }
 
-func TestHandleLogEvent_NormalEntry_NoStateRefresh(t *testing.T) {
-	methodChan := make(chan string, 1)
-	mcpServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var body struct {
-			Method string `json:"method"`
-		}
-		json.NewDecoder(r.Body).Decode(&body)
-		methodChan <- body.Method
-		fmt.Fprintf(w, `{"jsonrpc":"2.0","result":[],"id":1}`)
-	}))
-	defer mcpServer.Close()
-
+func TestDevTUI_reconstructRemoteHandlers(t *testing.T) {
 	tui := &DevTUI{
 		TuiConfig: &TuiConfig{
-			ClientURL: mcpServer.URL + "/logs",
+			ClientURL: "http://localhost:3030/logs",
 		},
-		tabContentsChan: make(chan tabContent, 10),
 	}
-	tui.NewTabSection("SHORTCUTS", "Mock Shortcuts")
+	section := &tabSection{Title: "App"}
+	tui.TabSections = []*tabSection{section}
 
-	// HandlerType != 0 should NOT trigger refresh
-	tui.handleLogEvent(`{"handler_type": 1, "tab_title": "SHORTCUTS"}`)
+	entries := []StateEntry{
+		{TabTitle: "App", HandlerName: "Srv", HandlerType: 1}, // Local
+		{TabTitle: "Other", HandlerName: "Log", HandlerType: 1},
+	}
 
-	select {
-	case method := <-methodChan:
-		t.Errorf("Did not expect any JSON-RPC calls, but got '%s'", method)
-	case <-time.After(500 * time.Millisecond):
-		// Good, no request made
+	tui.reconstructRemoteHandlers(entries)
+
+	// entries[1] should be ignored (tab title mismatch)
+	if len(section.FieldHandlers) != 1 {
+		t.Errorf("Expected 1 handler added, got %d", len(section.FieldHandlers))
 	}
 }

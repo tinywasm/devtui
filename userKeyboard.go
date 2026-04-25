@@ -4,7 +4,7 @@ import (
 	"slices"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/tinywasm/context"
+	tinyctx "github.com/tinywasm/context"
 )
 
 // handleKeyboard processes keyboard input and updates the model state
@@ -167,21 +167,14 @@ func (h *DevTUI) handleEditingConfigKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
 
 // handleNormalModeKeyboard handles keyboard input in normal mode (not editing config)
 func (h *DevTUI) handleNormalModeKeyboard(msg tea.KeyMsg) (bool, tea.Cmd) {
-	// Client Mode: handle Ctrl+C to stop everything
-	if h.ClientMode && h.ClientURL != "" {
-		switch msg.Type {
-		case tea.KeyCtrlC:
-			// Stop project + clean terminal + exit
-			h.mcpClient().Dispatch(context.Background(), "tinywasm/action", &ActionArgs{Key: "stop"})
-			close(h.ExitChan)
-			return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
-		}
-	}
-
 	if msg.Type == tea.KeyCtrlC {
-		close(h.ExitChan) // Cerrar el canal para señalizar a todas las goroutines
-		// Usar tea.Sequence para asegurar que ExitAltScreen se ejecute antes de Quit
-		return false, tea.Sequence(tea.ExitAltScreen, tea.Quit)
+		if h.ClientMode && h.ClientURL != "" {
+			// Best-effort: tell daemon to stop the project
+			h.mcpClient().Dispatch(tinyctx.Background(), "tinywasm/action", &ActionArgs{Key: "stop"})
+		}
+		// Trigger shutdown through Update() to get full screen cleanup sequence
+		go h.tea.Send(shutdownMsg{})
+		return false, nil
 	}
 
 	if len(h.TabSections) == 0 {

@@ -11,7 +11,6 @@ func TestRealWorldScenario(t *testing.T) {
 	// Exactamente la misma configuración que en main.go
 	tui := NewTUI(&TuiConfig{
 		AppName:  "Ejemplo DevTUI",
-		ExitChan: make(chan bool),
 		Color: &ColorPalette{
 			Foreground: "#F4F4F4",
 			Background: "#000000",

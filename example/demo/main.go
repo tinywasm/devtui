@@ -27,7 +27,6 @@ func (l *SimpleLogger) Log(m string, a ...any) {
 func main() {
 	tui := devtui.NewTUI(&devtui.TuiConfig{
 		AppName:  "Demo",
-		ExitChan: make(chan bool),
 		Color:    devtui.DefaultPalette(),
 		Logger: func(messages ...any) {
 			fmt.Println(messages...) // Replace with actual logging implementation

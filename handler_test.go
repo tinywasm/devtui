@@ -561,7 +561,6 @@ func DefaultTUIForTest(handlersAndLogger ...any) *DevTUI {
 
 	// Initialize the UI with TestMode enabled for synchronous execution
 	h := NewTUI(&TuiConfig{
-		ExitChan: make(chan bool), // Channel to signal exit
 		Color:    nil,             // Use default colors
 		Logger:   logFunc,
 	})

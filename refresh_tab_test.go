@@ -14,7 +14,6 @@ import (
 func TestRefreshCurrentTab(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestRefresh",
-		ExitChan: make(chan bool),
 		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
@@ -55,7 +54,6 @@ func TestRefreshCurrentTab(t *testing.T) {
 func TestRefreshCurrentTabBeforeReady(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestRefreshBeforeReady",
-		ExitChan: make(chan bool),
 		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
@@ -73,7 +71,6 @@ func TestRefreshCurrentTabBeforeReady(t *testing.T) {
 func TestRefreshCurrentTabFromMultipleGoroutines(t *testing.T) {
 	config := &TuiConfig{
 		AppName:  "TestConcurrentRefresh",
-		ExitChan: make(chan bool),
 		Logger:   func(messages ...any) { t.Log(messages...) },
 	}
 
