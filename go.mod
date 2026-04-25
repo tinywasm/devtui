@@ -5,7 +5,7 @@ go 1.25.2
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/tinywasm/context v0.0.18
-	github.com/tinywasm/fmt v0.23.5
+	github.com/tinywasm/fmt v0.23.6
 	github.com/tinywasm/form v0.2.2
 	github.com/tinywasm/json v0.5.2
 	github.com/tinywasm/time v0.5.0
