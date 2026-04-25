@@ -27,7 +27,7 @@ type TuiInterface interface {
 
 ```go
 func main() {
-    tui := devtui.NewTUI(&devtui.TuiConfig{AppName: "Demo", ExitChan: make(chan bool)})
+    tui := devtui.NewTUI(&devtui.TuiConfig{AppName: "Demo"})
 
     // 1. Create a section
     ops := tui.NewTabSection("Operations", "System Tasks")

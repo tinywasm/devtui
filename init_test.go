@@ -7,7 +7,6 @@ import (
 func TestNewTUI(t *testing.T) {
 	// Test configuration with default tabs
 	config := &TuiConfig{
-		ExitChan: make(chan bool),
 		Color:    &ColorPalette{}, // Usando un ColorPalette vacío
 		Logger: func(messages ...any) {
 			// Mock function for logging

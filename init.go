@@ -2,6 +2,7 @@ package devtui
 
 import (
 	"bufio"
+	"context"
 	"os"
 	"sync"
 	"time"
@@ -9,7 +10,6 @@ import (
 	"github.com/tinywasm/fmt"
 	tinytime "github.com/tinywasm/time"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/tinywasm/unixid"
 )
@@ -19,37 +19,6 @@ type channelMsg tabContent
 
 // Print representa un mensaje de actualización
 type tickMsg time.Time
-
-// DevTUI mantiene el estado de la aplicación
-type DevTUI struct {
-	*TuiConfig
-	*tuiStyle
-
-	apiKey string // stored from TuiConfig.APIKey
-
-	id *unixid.UnixID
-
-	ready    bool
-	viewport viewport.Model
-
-	focused bool // is the app focused
-
-	TabSections       []*tabSection // represent sections in the tui
-	activeTab         int           // current tab index
-	editModeActivated bool          // global flag to edit config
-
-	shortcutRegistry *ShortcutRegistry // NEW: Global shortcut key registry
-
-	currentTime     string
-	tabContentsChan chan tabContent
-	tea             *tea.Program
-	testMode        bool // private: only used in tests to enable synchronous behavior
-
-	// MCP integration: separate logger for MCP tool execution
-	mcpLogger func(message ...any) // injected by mcpserve via SetLog()
-
-	cursorVisible bool // for blinking effect
-}
 
 // cursorTickMsg is used for blinking the cursor
 type cursorTickMsg time.Time
@@ -61,36 +30,12 @@ func (h *DevTUI) cursorTick() tea.Cmd {
 	})
 }
 
-type TuiConfig struct {
-	AppName    string    // app name eg: "MyApp"
-	AppVersion string    // app version eg: "v1.0.0"
-	ExitChan   chan bool //  global chan to close app eg: make(chan bool)
-	Debug      bool      // NEW: Enable debug mode for unfiltered logs
-	TestMode   bool      // Set to true for synchronous execution in tests
-	/*// *ColorPalette style for the TUI
-	  // if nil it will use default style:
-	type ColorPalette struct {
-	 Foreground string // eg: #F4F4F4
-	 Background string // eg: #000000
-	 Primary  string // eg: #FF6600
-	 Secondary   string // eg: #666666
-	}*/
-	Color *ColorPalette
-
-	Logger func(messages ...any) // function to write log error
-
-	ClientMode bool   // true if it should listen to SSE
-	ClientURL  string // e.g. http://localhost:3030/logs
-	APIKey     string // Bearer token for secured daemon; set by app, empty = open/local
-}
-
 // NewTUI creates a new DevTUI instance and initializes it.
 //
 // Usage Example:
 //
 //	config := &TuiConfig{
 //	    AppName: "MyApp",
-//	    ExitChan: make(chan bool),
 //	    Color: nil, // or your *ColorPalette
 //	    Logger: func(err any) { os.Stdout.WriteString(fmt.Sprintf("%v\n", err)) },
 //	}
@@ -109,6 +54,8 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		// id will remain nil, but createTabContent method will handle this gracefully now
 	}
 
+	_, noopCancel := context.WithCancel(context.Background())
+
 	tui := &DevTUI{
 		TuiConfig:        c,
 		apiKey:           c.APIKey,
@@ -121,6 +68,7 @@ func NewTUI(c *TuiConfig) *DevTUI {
 		id:               id,                    // Set the ID here
 		shortcutRegistry: newShortcutRegistry(), // NEW: Initialize shortcut registry
 		testMode:         c.TestMode,
+		sseCancel:        noopCancel,
 	}
 
 	// FIXED: Removed manual content sending to prevent duplication
@@ -139,7 +87,10 @@ func NewTUI(c *TuiConfig) *DevTUI {
 func (h *DevTUI) Init() tea.Cmd {
 	// Start SSE client here (sections must be registered before replay messages arrive)
 	if h.ClientMode && h.ClientURL != "" {
-		go h.startSSEClient(h.ClientURL)
+		ctx, cancel := context.WithCancel(context.Background())
+		h.sseCancel = cancel // set before goroutine starts — no race
+		h.sseWg.Add(1)
+		go h.startSSEClient(h.ClientURL, ctx)
 	}
 	return tea.Batch(
 		h.listenToMessages(),
@@ -191,6 +142,31 @@ func (h *DevTUI) Start(args ...any) {
 		os.Stdout.WriteString(fmt.Sprintf("Error running DevTUI: %v\n", err))
 		os.Stdout.WriteString("\nPress any key to exit...\n")
 		bufio.NewReader(os.Stdin).ReadBytes('\n')
+	}
+
+	// Terminal is restored here. Now drain the SSE goroutine.
+	done := make(chan struct{})
+	go func() {
+		h.sseWg.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		// clean exit
+	case <-time.After(2 * time.Second):
+		os.Exit(0) // terminal already clean; force exit
+	}
+}
+
+// shutdownMsg triggers a clean exit through the normal Update() path.
+// This ensures the full ClearScreen → ExitAltScreen → Quit sequence runs.
+type shutdownMsg struct{}
+
+// Shutdown signals the TUI to stop gracefully.
+// Safe to call from any goroutine (OS signal handlers, external callers).
+func (h *DevTUI) Shutdown() {
+	if h.tea != nil {
+		go h.tea.Send(shutdownMsg{})
 	}
 }
 

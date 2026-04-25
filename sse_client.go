@@ -2,12 +2,13 @@ package devtui
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/tinywasm/context"
+	tinyctx "github.com/tinywasm/context"
 	. "github.com/tinywasm/fmt"
 	"github.com/tinywasm/mcp"
 )
@@ -35,7 +36,9 @@ func (h *DevTUI) actionBaseURL() string {
 }
 
 // startSSEClient connects to the SSE endpoint and processes incoming logs
-func (h *DevTUI) startSSEClient(url string) {
+func (h *DevTUI) startSSEClient(url string, ctx context.Context) {
+	defer h.sseWg.Done()
+
 	// Ensure URL has protocol
 	if !strings.HasPrefix(url, "http://") && !strings.HasPrefix(url, "https://") {
 		url = "http://" + url
@@ -51,19 +54,23 @@ func (h *DevTUI) startSSEClient(url string) {
 	retryDelay := 1 * time.Second
 
 	for {
+		// Check for cancellation before each connection attempt
 		select {
-		case <-h.ExitChan:
+		case <-ctx.Done():
 			return
 		default:
 		}
 
-		if h.Logger != nil {
+		if !h.isShuttingDown.Load() && h.Logger != nil {
 			h.Logger("Connecting to SSE stream at", url)
 		}
 
-		req, err := http.NewRequest("GET", url, nil)
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 		if err != nil {
-			if h.Logger != nil {
+			if ctx.Err() != nil {
+				return // context cancelled
+			}
+			if !h.isShuttingDown.Load() && h.Logger != nil {
 				h.Logger("Error creating SSE request:", err)
 			}
 			time.Sleep(retryDelay)
@@ -79,7 +86,10 @@ func (h *DevTUI) startSSEClient(url string) {
 
 		resp, err := client.Do(req)
 		if err != nil {
-			if h.Logger != nil {
+			if ctx.Err() != nil {
+				return // context cancelled — clean exit, no log
+			}
+			if !h.isShuttingDown.Load() && h.Logger != nil {
 				h.Logger("Error connecting to SSE server:", err)
 			}
 			time.Sleep(retryDelay)
@@ -91,8 +101,9 @@ func (h *DevTUI) startSSEClient(url string) {
 
 		// Process the stream
 		for {
+			// Non-blocking cancellation check before each read
 			select {
-			case <-h.ExitChan:
+			case <-ctx.Done():
 				resp.Body.Close()
 				return
 			default:
@@ -100,7 +111,11 @@ func (h *DevTUI) startSSEClient(url string) {
 
 			line, err := reader.ReadString('\n')
 			if err != nil {
-				if h.Logger != nil {
+				resp.Body.Close()
+				if ctx.Err() != nil {
+					return // context cancelled mid-stream
+				}
+				if !h.isShuttingDown.Load() && h.Logger != nil {
 					h.Logger("Error reading SSE stream:", err)
 				}
 				break // Break inner loop to reconnect
@@ -126,7 +141,7 @@ func (h *DevTUI) startSSEClient(url string) {
 			}
 		}
 
-		resp.Body.Close()
+		// resp.Body already closed above in all paths
 		time.Sleep(retryDelay)
 	}
 }
@@ -142,7 +157,7 @@ func (h *DevTUI) mcpClient() *mcp.Client {
 func (h *DevTUI) handleLogEvent(data string) {
 	var dto tabContentDTO
 	if err := json.Unmarshal([]byte(data), &dto); err != nil {
-		if h.Logger != nil {
+		if !h.isShuttingDown.Load() && h.Logger != nil {
 			h.Logger("Error unmarshalling SSE data:", err)
 		}
 		return
@@ -206,7 +221,7 @@ func (h *DevTUI) clearRemoteHandlers() {
 
 // fetchAndReconstructState fetches the daemon state snapshot and builds remote handlers via JSON-RPC.
 func (h *DevTUI) fetchAndReconstructState() {
-	h.mcpClient().Call(context.Background(), "tinywasm/state", nil, func(result []byte, err error) {
+	h.mcpClient().Call(tinyctx.Background(), "tinywasm/state", nil, func(result []byte, err error) {
 		if err != nil || result == nil {
 			return
 		}

@@ -13,7 +13,6 @@ func TestGetSectionLogsPlainNoANSI(t *testing.T) {
 	exitChan := make(chan bool)
 	tui := NewTUI(&TuiConfig{
 		AppName:  "TestApp",
-		ExitChan: exitChan,
 		Color:    DefaultPalette(),
 		Logger:   func(messages ...any) {},
 	})
@@ -57,7 +56,6 @@ func TestGetMCPToolsMetadata(t *testing.T) {
 	exitChan := make(chan bool)
 	tui := NewTUI(&TuiConfig{
 		AppName:  "TestApp",
-		ExitChan: exitChan,
 		Color:    DefaultPalette(),
 		Logger:   func(messages ...any) {},
 	})
@@ -99,7 +97,6 @@ func TestMCPGetSectionLogsListsSections(t *testing.T) {
 	var loggedMessages []string
 	tui := NewTUI(&TuiConfig{
 		AppName:  "TestApp",
-		ExitChan: exitChan,
 		Color:    DefaultPalette(),
 		Logger: func(messages ...any) {
 			for _, msg := range messages {

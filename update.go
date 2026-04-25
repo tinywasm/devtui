@@ -33,6 +33,11 @@ func (h *DevTUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	)
 
 	switch msg := msg.(type) {
+	case shutdownMsg:
+		h.isShuttingDown.Store(true)
+		h.sseCancel()
+		return h, tea.Sequence(tea.ClearScreen, tea.ExitAltScreen, tea.Quit)
+
 	case tea.KeyMsg: // Al presionar una tecla
 		continueProcessing, keyCmd := h.handleKeyboard(msg)
 		if !continueProcessing {

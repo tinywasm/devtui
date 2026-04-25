@@ -14,7 +14,6 @@ func TestUIDisplayBug(t *testing.T) {
 		// Setup exactly like main.go but with TestMode disabled to get real async behavior
 		config := &TuiConfig{
 			AppName:  "DevTUI - Display Bug Test",
-			ExitChan: make(chan bool),
 			Logger: func(messages ...any) {
 				t.Logf("DevTUI Log: %v", messages)
 			},
@@ -105,7 +104,6 @@ func TestUIDisplayBug(t *testing.T) {
 		// Test if the problem is in the immediate update
 		config := &TuiConfig{
 			AppName:  "DevTUI - Immediate Update Test",
-			ExitChan: make(chan bool),
 		}
 
 		tui := NewTUI(config)

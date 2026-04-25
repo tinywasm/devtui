@@ -12,7 +12,6 @@ import (
 func TestOpcionA_RequirementsValidation(t *testing.T) {
 	tui := NewTUI(&TuiConfig{
 		AppName:  "Requirements Test",
-		ExitChan: make(chan bool),
 	})
 
 	// Enable test mode for synchronous execution
@@ -110,7 +109,6 @@ func TestCentralizedMessageProcessing(t *testing.T) {
 func TestLastMessageColorFixed(t *testing.T) {
 	tui := NewTUI(&TuiConfig{
 		AppName:  "Last Message Color Fixed Test",
-		ExitChan: make(chan bool),
 	})
 
 	// Enable test mode for synchronous execution
