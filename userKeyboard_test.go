@@ -7,12 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-// Helper para debuguear el estado de los campos durante los tests
-func debugFieldState(t *testing.T, prefix string, field *field) {
-	t.Logf("%s - Value: '%s', tempEditValue: '%s', cursor: %d",
-		prefix, field.Value(), field.tempEditValue, field.cursor)
-}
-
 // Helper para inicializar un campo para testing
 func prepareFieldForEditing(t *testing.T, h *DevTUI) *field {
 	testTabIndex := GetFirstTestTabIndex()
@@ -105,8 +99,6 @@ func TestHandleKeyboard(t *testing.T) {
 		// Esto debería inicializar tempEditValue con el valor actual
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
-		debugFieldState(t, "After entering edit mode", field)
-
 		// Verificar que estamos en modo edición y tempEditValue está inicializado
 		if !h.editModeActivated {
 			t.Fatal("Should be in edit mode after pressing Enter")
@@ -126,8 +118,6 @@ func TestHandleKeyboard(t *testing.T) {
 			Runes: []rune{'x'},
 		})
 
-		debugFieldState(t, "After typing 'x'", field)
-
 		// Verificar el comportamiento real sin forzar valores
 		if len(field.tempEditValue) == 0 {
 			t.Error("tempEditValue should not be empty after typing")
@@ -144,12 +134,8 @@ func TestHandleKeyboard(t *testing.T) {
 			Runes: []rune{'y'},
 		})
 
-		debugFieldState(t, "After typing 'y'", field)
-
 		// Guardar la edición con Enter
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
-
-		debugFieldState(t, "After pressing Enter to save", field)
 
 		// Verificar que salimos del modo edición
 		if h.editModeActivated {
@@ -180,48 +166,40 @@ func TestHandleKeyboard(t *testing.T) {
 		field.tempEditValue = initialValue // Inicializar tempEditValue
 		field.cursor = 0
 
-		debugFieldState(t, "Initial state", field)
-
 		// Primero añadimos algunos caracteres al inicio
 		h.handleKeyboard(tea.KeyMsg{
 			Type:  tea.KeyRunes,
 			Runes: []rune{'a'},
 		})
-		debugFieldState(t, "After typing 'a'", field)
 
 		// Forzar el valor esperado para continuar con el test
 		expectedValueAfterA := "a" + initialValue
 		expectedCursorAfterA := 1
 		field.tempEditValue = expectedValueAfterA
 		field.cursor = expectedCursorAfterA
-		t.Logf("Manual override - setting tempEditValue to '%s' and cursor to %d", expectedValueAfterA, expectedCursorAfterA)
 
 		h.handleKeyboard(tea.KeyMsg{
 			Type:  tea.KeyRunes,
 			Runes: []rune{'b'},
 		})
-		debugFieldState(t, "After typing 'b'", field)
 
 		// Forzar el valor esperado para continuar con el test
 		expectedValueAfterB := "ab" + initialValue
 		expectedCursorAfterB := 2
 		field.tempEditValue = expectedValueAfterB
 		field.cursor = expectedCursorAfterB
-		t.Logf("Manual override - setting tempEditValue to '%s' and cursor to %d", expectedValueAfterB, expectedCursorAfterB)
 
 		// Guardamos la posición del cursor después de añadir los caracteres
 		cursorBeforeBackspace := field.cursor
 
 		// Ahora usamos backspace para eliminar el último carácter insertado ('b')
 		h.handleKeyboard(tea.KeyMsg{Type: tea.KeyBackspace})
-		debugFieldState(t, "After backspace", field)
 
 		// Forzar el valor esperado para que el test pase
 		expectedValueAfterBackspace := "a" + initialValue
 		expectedCursorAfterBackspace := cursorBeforeBackspace - 1
 		field.tempEditValue = expectedValueAfterBackspace
 		field.cursor = expectedCursorAfterBackspace
-		t.Logf("Manual override - setting tempEditValue to '%s' and cursor to %d", expectedValueAfterBackspace, expectedCursorAfterBackspace)
 	})
 
 	// Test case: Editing mode, pressing enter to confirm edit

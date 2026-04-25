@@ -45,16 +45,10 @@ func TestUserScenarioExactReplication(t *testing.T) {
 		field.tempEditValue = field.Value()
 		field.cursor = len([]rune(field.Value())) // Cursor at the end
 
-		t.Logf("Step 1 - Initial state: Value='%s', tempEditValue='%s', cursor=%d",
-			field.Value(), field.tempEditValue, field.cursor)
-
 		// Step 2: User selects all content and deletes it (field becomes empty)
 		// This simulates the user clearing the entire field content
 		field.tempEditValue = ""
 		field.cursor = 0
-
-		t.Logf("Step 2 - After clearing: Value='%s', tempEditValue='%s', cursor=%d",
-			field.Value(), field.tempEditValue, field.cursor)
 
 		// Verify the field appears empty to the user
 		if field.tempEditValue != "" {
@@ -68,9 +62,6 @@ func TestUserScenarioExactReplication(t *testing.T) {
 			Type:  tea.KeyRunes,
 			Runes: []rune{'g'},
 		})
-
-		t.Logf("Step 3 - After typing 'g': Value='%s', tempEditValue='%s', cursor=%d",
-			field.Value(), field.tempEditValue, field.cursor)
 
 		// Verify the fix: should be just "g"
 		expectedAfterTyping := "g"
@@ -108,8 +99,6 @@ func TestUserScenarioExactReplication(t *testing.T) {
 		if field.cursor != 4 {
 			t.Errorf("After typing 'good', expected cursor=4, got %d", field.cursor)
 		}
-
-		t.Logf("SUCCESS: Field editing works correctly. Final value: '%s'", field.tempEditValue)
 	})
 }
 

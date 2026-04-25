@@ -33,7 +33,6 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 
 		// Verify initial state
 		initialValue := portField.Value()
-		t.Logf("STEP 1: Initial field value: '%s'", initialValue)
 
 		if initialValue != "8080" {
 			t.Errorf("Expected initial value '8080', got '%s'", initialValue)
@@ -41,8 +40,6 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 
 		// STEP 2: Simulate user pressing Enter to edit the port field
 		// This should trigger edit mode
-		t.Logf("STEP 2: User presses Enter to edit field...")
-
 		// Simulate pressing Enter on the port field (like in manual scenario)
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
@@ -52,16 +49,11 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 		}
 
 		// Verify tempEditValue is initialized with current value
-		t.Logf("After entering edit mode - tempEditValue: '%s', field.Value(): '%s'",
-			portField.tempEditValue, portField.Value())
-
 		if portField.tempEditValue != initialValue {
 			t.Errorf("Expected tempEditValue to be '%s', got '%s'", initialValue, portField.tempEditValue)
 		}
 
 		// STEP 3: User clears the field and types "80" (like in the image)
-		t.Logf("STEP 3: User edits field to '80'...")
-
 		// Realistic: Clear field completely with backspace
 		// Clear existing "8080" (4 characters)
 		for i := 0; i < 5; i++ { // 4 chars + buffer
@@ -81,9 +73,6 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 		})
 
 		// Verify the tempEditValue is now "80"
-		t.Logf("After typing '80' - tempEditValue: '%s', field.Value(): '%s'",
-			portField.tempEditValue, portField.Value())
-
 		if portField.tempEditValue != "80" {
 			t.Errorf("Expected tempEditValue to be '80', got '%s'", portField.tempEditValue)
 		}
@@ -94,14 +83,10 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 		}
 
 		// STEP 4: User presses Enter to confirm the change
-		t.Logf("STEP 4: User presses Enter to confirm change...")
-
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
 		// CRITICAL TEST: After pressing Enter, field.Value() should return the new value
 		newValue := portField.Value()
-		t.Logf("STEP 5: After pressing Enter - tempEditValue: '%s', field.Value(): '%s'",
-			portField.tempEditValue, newValue)
 
 		// This is the key assertion - the field should now show the updated value
 		if newValue != "80" {
@@ -124,14 +109,9 @@ func TestManualScenarioValueUpdate(t *testing.T) {
 		}
 
 		// STEP 6: Simulate entering edit mode again to verify the value persists
-		t.Logf("STEP 6: Enter edit mode again to verify value persists...")
-
 		tui.handleKeyboard(tea.KeyMsg{Type: tea.KeyEnter})
 
 		// The tempEditValue should now be initialized with the NEW value
-		t.Logf("Re-entering edit mode - tempEditValue: '%s', field.Value(): '%s'",
-			portField.tempEditValue, portField.Value())
-
 		if portField.tempEditValue != "80" {
 			t.Errorf("When re-entering edit mode, expected tempEditValue to be '80', got '%s'", portField.tempEditValue)
 		}
@@ -180,8 +160,7 @@ func TestDisplayedValueInUI(t *testing.T) {
 
 		// 4. Check what the UI renders
 		// Get the content that would be displayed
-		content := tui.ContentView()
-		t.Logf("UI Content after update:\n%s", content)
+		_ = tui.ContentView()
 
 		// The UI should now show the updated port value
 		// We can't easily test the exact rendered output, but we can verify
