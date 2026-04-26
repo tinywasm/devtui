@@ -59,6 +59,12 @@ DevTUI has a built-in global shortcut system.
 -   These shortcuts are active globally (from any tab).
 -   Pressing the key navigates to the handler and triggers its action.
 
+## Closing the TUI
+
+The only supported way to exit is **Ctrl+C**. There is no `q` shortcut or any other
+key binding to quit. Ctrl+C triggers a clean shutdown sequence:
+`ClearScreen → ExitAltScreen → Quit`, which restores the terminal to its previous state.
+
 ## Testing
 
 The decoupled design makes testing your application trivial. You can mock the UI interface in your tests without needing a real TUI instance.
