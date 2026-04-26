@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -75,12 +76,21 @@ func NewTUI(c *TuiConfig) *DevTUI {
 	// HandlerDisplay automatically shows Content() when field is selected
 	// No need for manual sendMessageWithHandler() call
 
-	tui.tea = tea.NewProgram(tui,
-		tea.WithAltScreen(), // use the full size of the terminal in its "alternate screen buffer"
-		// Mouse support disabled to enable terminal text selection
-	)
+	tui.rebuildTeaProgram()
 
 	return tui
+}
+
+func (h *DevTUI) rebuildTeaProgram() {
+	var options []tea.ProgramOption
+	if h.testMode {
+		// Use a reader that returns EOF immediately to exit Bubble Tea loop
+		options = append(options, tea.WithInput(strings.NewReader("")), tea.WithoutRenderer())
+	} else {
+		options = append(options, tea.WithAltScreen())
+	}
+
+	h.tea = tea.NewProgram(h, options...)
 }
 
 // Init initializes the terminal UI application.
@@ -111,14 +121,25 @@ func (h *DevTUI) Init() tea.Cmd {
 // before exiting.
 //
 // Parameters:
-//   - args ...any: Optional arguments. Can include a *sync.WaitGroup for synchronization.
+//   - args ...any: Optional arguments. Supported types:
+//   - *sync.WaitGroup: called Done() when the TUI exits.
+//   - chan bool:       closed when the TUI exits cleanly, so goroutines
+//                     blocked on <-exitChan can terminate.
 func (h *DevTUI) Start(args ...any) {
-	// Check if a WaitGroup was passed
+	var wg *sync.WaitGroup
+	var exitChan chan bool
+
 	for _, arg := range args {
-		if wg, ok := arg.(*sync.WaitGroup); ok {
-			defer wg.Done()
-			break
+		switch v := arg.(type) {
+		case *sync.WaitGroup:
+			wg = v
+		case chan bool:
+			exitChan = v
 		}
+	}
+
+	if wg != nil {
+		defer wg.Done()
 	}
 
 	// Add SHORTCUTS tab last, after all user tabs are registered
@@ -140,8 +161,10 @@ func (h *DevTUI) Start(args ...any) {
 
 	if _, err := h.tea.Run(); err != nil {
 		os.Stdout.WriteString(fmt.Sprintf("Error running DevTUI: %v\n", err))
-		os.Stdout.WriteString("\nPress any key to exit...\n")
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		if !h.isTestMode() {
+			os.Stdout.WriteString("\nPress any key to exit...\n")
+			bufio.NewReader(os.Stdin).ReadBytes('\n')
+		}
 	}
 
 	// Terminal is restored here. Now drain the SSE goroutine.
@@ -156,6 +179,21 @@ func (h *DevTUI) Start(args ...any) {
 	case <-time.After(2 * time.Second):
 		os.Exit(0) // terminal already clean; force exit
 	}
+
+	// Clean exit: close the exit channel to release dependent goroutines
+	if exitChan != nil {
+		select {
+		case <-exitChan:
+			// already closed
+		default:
+			close(exitChan)
+		}
+	}
+}
+
+// TestOnlyRun is for testing purposes only.
+func (h *DevTUI) TestOnlyRun() (tea.Model, error) {
+	return h.tea.Run()
 }
 
 // shutdownMsg triggers a clean exit through the normal Update() path.
@@ -173,7 +211,11 @@ func (h *DevTUI) Shutdown() {
 // SetTestMode enables or disables test mode for synchronous behavior in tests.
 // This should only be used in test files to make tests deterministic.
 func (h *DevTUI) SetTestMode(enabled bool) {
+	if h.testMode == enabled {
+		return
+	}
 	h.testMode = enabled
+	h.rebuildTeaProgram()
 }
 
 // isTestMode returns true if the TUI is running in test mode (synchronous execution).
