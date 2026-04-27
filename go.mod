@@ -7,13 +7,13 @@ require (
 	github.com/tinywasm/context v0.0.18
 	github.com/tinywasm/fmt v0.23.6
 	github.com/tinywasm/form v0.2.2
-	github.com/tinywasm/json v0.5.2
 	github.com/tinywasm/time v0.5.0
 )
 
 require (
-	github.com/tinywasm/dom v0.7.3 // indirect
+	github.com/tinywasm/dom v0.7.4 // indirect
 	github.com/tinywasm/fetch v0.1.23 // indirect
+	github.com/tinywasm/json v0.5.2 // indirect
 )
 
 require (
