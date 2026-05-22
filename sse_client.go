@@ -229,6 +229,9 @@ func (h *DevTUI) fetchAndReconstructState() {
 		if err := json.Unmarshal(result, &entries); err != nil {
 			return
 		}
+		if len(entries) == 0 {
+			return
+		}
 		h.clearRemoteHandlers()
 		h.reconstructRemoteHandlers(entries)
 		h.RefreshUI()
