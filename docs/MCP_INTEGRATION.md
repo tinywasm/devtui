@@ -3,7 +3,7 @@
 ## Decisión de diseño
 
 devtui satisface la interfaz MCP cliente (`GetMCPTools`, `DispatchAction`, `GetHandlerStates`,
-`Name`, `SetLog`) pero **no expone tools MCP propias**.
+`Name`, `SetLog`) pero **no expone tools MCP propias**
 
 - `GetMCPTools()` devuelve `nil` — devtui no posee ninguna tool.
 - `DispatchAction` devuelve `false` — las acciones se reenvían al daemon, no se despachan localmente.
