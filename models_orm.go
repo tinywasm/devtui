@@ -7,22 +7,6 @@ import (
 	"github.com/tinywasm/form/input"
 )
 
-var _schemaGetLogsArgs = []fmt.Field{
-		{Name: "section", Type: fmt.FieldText, Widget: input.Text()},
-	}
-
-func (m *GetLogsArgs) Schema() []fmt.Field { return _schemaGetLogsArgs }
-
-func (m *GetLogsArgs) Pointers() []any {
-	return []any{
-		&m.Section,
-	}
-}
-
-func (m *GetLogsArgs) Validate(action byte) error {
-	return fmt.ValidateFields(action, m)
-}
-
 var _schemaActionArgs = []fmt.Field{
 		{Name: "key", Type: fmt.FieldText, Widget: input.Text()},
 		{Name: "value", Type: fmt.FieldText, OmitEmpty: true, Widget: input.Text()},
