@@ -42,7 +42,7 @@ DevTUI's logging system is unique:
 
 -   **Last Message Only**: By default, only the last message from each handler is shown in the main view. This keeps the UI stable and readable.
 -   **Full History**: The full log history is preserved internally.
--   **MCP Integration**: DevTUI exposes an MCP (Model Context Protocol) tool called `app_get_logs`. AI agents or external tools can query this tool to retrieve the full log history for debugging, even though the user sees a clean UI.
+-   **MCP Integration**: DevTUI implements `GetMCPTools()` (returns nil) and `DispatchAction` so it satisfies the MCP client interface. Log retrieval for LLMs is owned by `app` via `app_get_logs`; devtui only renders the interactive TUI.
 
 ## Progress System
 
