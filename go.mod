@@ -6,14 +6,12 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/tinywasm/context v0.0.18
 	github.com/tinywasm/fmt v0.24.0
-	github.com/tinywasm/form v0.2.6
+	github.com/tinywasm/form v0.2.7
 	github.com/tinywasm/time v0.5.0
 )
 
 require (
-	github.com/tinywasm/dom v0.10.1 // indirect
 	github.com/tinywasm/fetch v0.1.24 // indirect
-	github.com/tinywasm/html v0.0.3 // indirect
 	github.com/tinywasm/json v0.5.2 // indirect
 )
 
