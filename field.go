@@ -1,7 +1,7 @@
 package devtui
 
 import (
-	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 // Field represents a field in the TUI with a handler-based approach
@@ -185,7 +185,7 @@ func (f *field) sendMessage(msgs ...any) {
 	trackingID := handlerName
 
 	// Convert and send message with automatic type detection
-	message, msgType := Translate(msgs...).StringType()
+	message, msgType := lang.Translate(msgs...).StringType()
 	hType := handlerTypeLoggable
 	if f.handler != nil {
 		hType = f.handler.handlerType

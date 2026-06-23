@@ -5,6 +5,7 @@ import (
 	"time"
 
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 // Interface for handling tab field sectionFields
@@ -64,7 +65,7 @@ func (ts *tabSection) getWritingHandler(name string) *anyHandler {
 func (hw *handlerWriter) Write(p []byte) (n int, err error) {
 	msg := Convert(string(p)).TrimSpace().String()
 	if msg != "" {
-		message, msgType := Translate(msg).StringType()
+		message, msgType := lang.Translate(msg).StringType()
 
 		var handlerColor string
 		if handler := hw.tabSection.getWritingHandler(hw.handlerName); handler != nil {

@@ -2,6 +2,7 @@ package devtui
 
 import (
 	"github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 // validateTabSection validates that the provided any is a valid *tabSection
@@ -214,7 +215,7 @@ func (ts *tabSection) registerLoggableHandler(handler Loggable, color string) {
 		}
 
 		// Get message type and content
-		messageStr, msgType := fmt.Translate(cleanMsg).StringType()
+		messageStr, msgType := lang.Translate(cleanMsg).StringType()
 
 		// Get CURRENT name for dynamic tracking
 		currentName := nameFunc()

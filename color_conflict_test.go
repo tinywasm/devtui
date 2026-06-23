@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 // TestOpcionA_RequirementsValidation validates the core requirements from BETTER_VIEW.md
@@ -82,8 +83,8 @@ func TestCentralizedMessageProcessing(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.content, func(t *testing.T) {
-			// Test que Translate(content).StringType() funciona correctamente
-			_, detectedType := Translate(tc.content).StringType()
+			// Test que lang.Translate(content).StringType() funciona correctamente
+			_, detectedType := lang.Translate(tc.content).StringType()
 
 			if detectedType != tc.expectedType {
 				t.Errorf("FAIL: Expected %v, got %v for: %s", tc.expectedType, detectedType, tc.content)
@@ -126,7 +127,7 @@ func TestLastMessageColorFixed(t *testing.T) {
 			_ = tui.formatMessage(tabContent, true)
 
 			// Verificar detección automática de tipo
-			_, detectedType := Translate(tc.content).StringType()
+			_, detectedType := lang.Translate(tc.content).StringType()
 			if detectedType != tc.expectedType {
 				t.Errorf("❌ DetectMessageType failed: Expected %v, got %v", tc.expectedType, detectedType)
 			}

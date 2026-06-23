@@ -3,6 +3,7 @@ package devtui
 // createShortcutsTab creates and registers the shortcuts tab with its handler
 import (
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 func createShortcutsTab(tui *DevTUI) {
@@ -10,7 +11,7 @@ func createShortcutsTab(tui *DevTUI) {
 
 	handler := &shortcutsInteractiveHandler{
 		appName:            tui.AppName,
-		lang:               OutLang(), // Get current language automatically
+		lang:               lang.OutLang(), // Get current language automatically
 		needsLanguageInput: false,     // Initially show help content
 		tui:                tui,       // NEW: Reference to TUI for shortcut registry access
 	}
@@ -33,7 +34,7 @@ func (h *shortcutsInteractiveHandler) Name() string {
 }
 
 func (h *shortcutsInteractiveHandler) Label() string {
-	return Translate("language", ":").String()
+	return lang.Translate("language", ":").String()
 }
 
 // MessageTracker implementation for operation tracking
@@ -57,7 +58,7 @@ func (h *shortcutsInteractiveHandler) Change(newValue string) {
 	}
 
 	// Handle language change
-	lang := OutLang(newValue)
+	lang := lang.OutLang(newValue)
 	h.lang = lang
 	h.needsLanguageInput = false
 
@@ -73,7 +74,7 @@ func (h *shortcutsInteractiveHandler) WaitingForUser() bool {
 
 // generateHelpContent creates the help content string
 func (h *shortcutsInteractiveHandler) generateHelpContent() string {
-	content := Translate(h.appName, "shortcuts", "keyboard", `:`+"\n\n",
+	content := lang.Translate(h.appName, "shortcuts", "keyboard", `:`+"\n\n",
 		"content", "tab", `:
   • Tab/Shift+Tab  -`, "switch", "content", "\n\n",
 		"fields", `:
@@ -108,7 +109,7 @@ Viewport:
 		}
 	}
 
-	content += "\n" + Translate("language", "supported", `: en, es, zh, hi, ar, pt, fr, de, ru`).String()
+	content += "\n" + lang.Translate("language", "supported", `: en, es, zh, hi, ar, pt, fr, de, ru`).String()
 	return content
 }
 

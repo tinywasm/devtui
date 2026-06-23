@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	. "github.com/tinywasm/fmt"
+	"github.com/tinywasm/fmt/lang"
 )
 
 // TestCapitalizeFormatPreservation tests specific formatting issues
@@ -63,7 +64,7 @@ func TestTranslationWithCapitalize(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// This mimics the exact problem pattern from generateHelpContent
-			result := Translate("Test", "shortcuts", "keyboard", `("`+tt.lang+`"):
+			result := lang.Translate("Test", "shortcuts", "keyboard", `("`+tt.lang+`"):
 
 Tabs:
   • Tab/Shift+Tab  -`, "switch", ` tabs`).Capitalize().String()

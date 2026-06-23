@@ -5,14 +5,14 @@ go 1.25.2
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/tinywasm/context v0.0.18
-	github.com/tinywasm/fmt v0.24.0
-	github.com/tinywasm/form v0.2.8
+	github.com/tinywasm/fmt v0.24.4
+	github.com/tinywasm/form v0.2.9
 	github.com/tinywasm/time v0.5.0
 )
 
 require (
 	github.com/tinywasm/fetch v0.1.24 // indirect
-	github.com/tinywasm/json v0.5.2 // indirect
+	github.com/tinywasm/json v0.5.4 // indirect
 )
 
 require (
@@ -26,7 +26,7 @@ require (
 	github.com/mattn/go-localereader v0.0.1 // indirect
 	github.com/muesli/ansi v0.0.0-20230316100256-276c6243b2f6 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/tinywasm/mcp v0.1.9
+	github.com/tinywasm/mcp v0.1.10
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/text v0.32.0 // indirect
 )
