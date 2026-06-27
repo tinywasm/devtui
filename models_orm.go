@@ -4,6 +4,7 @@ package devtui
 
 import (
 	"github.com/tinywasm/fmt"
+	"github.com/tinywasm/form/input"
 )
 
 func (m *ActionArgs) ModelName() string {
@@ -11,8 +12,8 @@ func (m *ActionArgs) ModelName() string {
 }
 
 var _schemaActionArgs = []fmt.Field{
-		{Name: "key", Type: fmt.FieldText},
-		{Name: "value", Type: fmt.FieldText},
+		{Name: "key", Type: fmt.FieldText, Widget: input.Text()},
+		{Name: "value", Type: fmt.FieldText, Widget: input.Text()},
 	}
 
 func (m *ActionArgs) Schema() []fmt.Field { return _schemaActionArgs }
@@ -26,10 +27,9 @@ func (m *ActionArgs) EncodeFields(w fmt.FieldWriter) {
 	w.String("value", m.Value)
 }
 
-func (m *ActionArgs) DecodeFields(r fmt.FieldReader) error {
+func (m *ActionArgs) DecodeFields(r fmt.FieldReader) {
 	if v, ok := r.String("key"); ok { m.Key = v }
 	if v, ok := r.String("value"); ok { m.Value = v }
-	return nil
 }
 
 type ActionArgsList []*ActionArgs
@@ -41,5 +41,9 @@ func (s *ActionArgsList) At(i int) fmt.Fielder { return (*s)[i] }
 func (s *ActionArgsList) Append() fmt.Fielder  { v := &ActionArgs{}; *s = append(*s, v); return v }
 func (s *ActionArgsList) IsNil() bool          { return s == nil }
 func (s *ActionArgsList) EncodeFields(_ fmt.FieldWriter) {}
-func (s *ActionArgsList) DecodeFields(_ fmt.FieldReader) error { return nil }
+func (s *ActionArgsList) DecodeFields(_ fmt.FieldReader) {}
+
+func (m *ActionArgs) Validate(action byte) error {
+	return fmt.ValidateFields(action, m)
+}
 
